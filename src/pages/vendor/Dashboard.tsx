@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ShoppingBag, Users, Wrench, AlertCircle, Bell, Plus, Search } from 'lucide-react';
@@ -12,19 +13,22 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
+import { useNavigate } from 'react-router-dom';
 import VendorHeader from '@/components/vendor/VendorHeader';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../contexts/NotificationContext';
-import { db, collection, onSnapshot, query, where, orderBy } from '../../lib/firebase';
+import { db, collection, onSnapshot, query, where, orderBy, doc, getDoc } from '../../lib/firebase';
 import { Sale, RepairRequest, Customer } from '../../types';
+import { toast } from 'sonner';
 
 const VendorDashboard = () => {
   const { currentUser } = useAuth();
-  const { notifications, unreadCount } = useNotifications();
+  const { notifications, unreadCount, markAsRead } = useNotifications();
   const [sales, setSales] = useState<Sale[]>([]);
   const [repairs, setRepairs] = useState<RepairRequest[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
   
   useEffect(() => {
     if (!currentUser || !currentUser.storeId) return;
@@ -39,7 +43,8 @@ const VendorDashboard = () => {
     const unsubscribeSales = onSnapshot(salesQuery, (snapshot) => {
       const salesData = snapshot.docs.map(doc => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate() || new Date()
       } as Sale));
       setSales(salesData);
     });
@@ -54,7 +59,8 @@ const VendorDashboard = () => {
     const unsubscribeRepairs = onSnapshot(repairsQuery, (snapshot) => {
       const repairsData = snapshot.docs.map(doc => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate() || new Date()
       } as RepairRequest));
       setRepairs(repairsData);
     });
@@ -79,6 +85,39 @@ const VendorDashboard = () => {
       unsubscribeCustomers();
     };
   }, [currentUser]);
+  
+  const handleNotificationClick = async (notificationId: string, relatedId?: string, type?: string) => {
+    await markAsRead(notificationId);
+    
+    // Redirection basée sur le type de notification
+    if (relatedId && type) {
+      switch (type) {
+        case 'sale':
+          navigate(`/vendor/sales/${relatedId}`);
+          break;
+        case 'repair':
+          navigate(`/vendor/repairs/${relatedId}`);
+          break;
+        case 'customer':
+          navigate(`/vendor/customers/${relatedId}`);
+          break;
+        default:
+          break;
+      }
+    }
+  };
+
+  const handleSaleClick = (saleId: string) => {
+    navigate(`/vendor/sales/${saleId}`);
+  };
+
+  const handleRepairClick = (repairId: string) => {
+    navigate(`/vendor/repairs/${repairId}`);
+  };
+
+  const handleNewSale = () => {
+    navigate('/vendor/sales/new');
+  };
   
   const filteredSales = sales.filter(sale => 
     (sale.customer?.name && sale.customer.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
@@ -114,7 +153,7 @@ const VendorDashboard = () => {
         
         {/* Overview Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
+          <Card className="hover-scale">
             <CardContent className="flex items-center p-6">
               <div className="bg-blue-100 p-3 rounded-full mr-4">
                 <ShoppingBag className="h-6 w-6 text-blue-700" />
@@ -126,7 +165,7 @@ const VendorDashboard = () => {
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="hover-scale">
             <CardContent className="flex items-center p-6">
               <div className="bg-purple-100 p-3 rounded-full mr-4">
                 <Users className="h-6 w-6 text-purple-700" />
@@ -138,8 +177,8 @@ const VendorDashboard = () => {
             </CardContent>
           </Card>
           
-          <Card>
-            <CardContent className="flex items-center p-6">
+          <Card className="hover-scale">
+            <CardContent className="flex items-center p-6" onClick={() => navigate('/vendor/repairs')} style={{ cursor: 'pointer' }}>
               <div className="bg-green-100 p-3 rounded-full mr-4">
                 <Wrench className="h-6 w-6 text-green-700" />
               </div>
@@ -150,7 +189,7 @@ const VendorDashboard = () => {
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="hover-scale">
             <CardContent className="flex items-center p-6">
               <div className="bg-red-100 p-3 rounded-full mr-4">
                 <AlertCircle className="h-6 w-6 text-red-700" />
@@ -183,7 +222,7 @@ const VendorDashboard = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <Button className="flex items-center gap-2">
+              <Button className="flex items-center gap-2" onClick={handleNewSale}>
                 <Plus className="h-4 w-4" /> Nouvelle vente
               </Button>
             </div>
@@ -210,7 +249,7 @@ const VendorDashboard = () => {
                 </TableHeader>
                 <TableBody>
                   {filteredSales.slice(0, 5).map((sale) => (
-                    <TableRow key={sale.id}>
+                    <TableRow key={sale.id} className="cursor-pointer hover:bg-gray-50" onClick={() => handleSaleClick(sale.id)}>
                       <TableCell className="font-medium">{sale.id.substring(0, 6)}</TableCell>
                       <TableCell>{sale.customer?.name || 'Client anonyme'}</TableCell>
                       <TableCell>{getSaleTypeLabel(sale.saleType)}</TableCell>
@@ -230,7 +269,16 @@ const VendorDashboard = () => {
                       </TableCell>
                       <TableCell>{new Date(sale.createdAt).toLocaleDateString()}</TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="sm">Détails</Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSaleClick(sale.id);
+                          }}
+                        >
+                          Détails
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -240,7 +288,7 @@ const VendorDashboard = () => {
             
             {filteredSales.length > 5 && (
               <div className="flex justify-center mt-4">
-                <Button variant="outline">Voir toutes les ventes</Button>
+                <Button variant="outline" onClick={() => navigate('/vendor/sales')}>Voir toutes les ventes</Button>
               </div>
             )}
           </CardContent>
@@ -264,7 +312,11 @@ const VendorDashboard = () => {
               ) : (
                 <div className="space-y-4">
                   {repairs.slice(0, 3).map((repair) => (
-                    <div key={repair.id} className="p-3 border rounded-lg">
+                    <div 
+                      key={repair.id} 
+                      className="p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+                      onClick={() => handleRepairClick(repair.id)}
+                    >
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <h4 className="font-medium">{repair.deviceBrand} {repair.deviceModel}</h4>
@@ -291,7 +343,9 @@ const VendorDashboard = () => {
               
               {repairs.length > 3 && (
                 <div className="flex justify-center mt-4">
-                  <Button variant="outline" size="sm">Voir toutes les réparations</Button>
+                  <Button variant="outline" size="sm" onClick={() => navigate('/vendor/repairs')}>
+                    Voir toutes les réparations
+                  </Button>
                 </div>
               )}
             </CardContent>
@@ -318,7 +372,8 @@ const VendorDashboard = () => {
                   {notifications.slice(0, 4).map((notification) => (
                     <div 
                       key={notification.id} 
-                      className={`p-3 border rounded-lg ${!notification.isRead ? 'border-l-4 border-l-blue-500' : ''}`}
+                      className={`p-3 border rounded-lg cursor-pointer hover:bg-gray-50 ${!notification.isRead ? 'border-l-4 border-l-blue-500' : ''}`}
+                      onClick={() => handleNotificationClick(notification.id, notification.relatedId, notification.type)}
                     >
                       <h4 className="font-medium">{notification.title}</h4>
                       <p className="text-sm text-gray-600">{notification.message}</p>
@@ -332,7 +387,13 @@ const VendorDashboard = () => {
               
               {notifications.length > 4 && (
                 <div className="flex justify-center mt-4">
-                  <Button variant="outline" size="sm">Voir toutes les notifications</Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => navigate('/vendor/notifications')}
+                  >
+                    Voir toutes les notifications
+                  </Button>
                 </div>
               )}
             </CardContent>

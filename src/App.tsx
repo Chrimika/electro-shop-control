@@ -19,6 +19,11 @@ import UsersPage from "./pages/owner/Users";
 
 // Vendor Routes
 import VendorDashboard from "./pages/vendor/Dashboard";
+import SalesList from "./pages/vendor/SalesList";
+import SaleDetail from "./pages/vendor/SaleDetail";
+import NewSale from "./pages/vendor/NewSale";
+import RepairsList from "./pages/vendor/RepairsList";
+import RepairDetail from "./pages/vendor/RepairDetail";
 
 // Repairer Routes
 import RepairerDashboard from "./pages/repairer/Dashboard";
@@ -106,7 +111,17 @@ const App = () => (
               } />
               <Route path="/vendor/sales" element={
                 <ProtectedRoute allowedRoles={['vendor']}>
-                  <div>Page des ventes vendeur en construction</div>
+                  <SalesList />
+                </ProtectedRoute>
+              } />
+              <Route path="/vendor/sales/new" element={
+                <ProtectedRoute allowedRoles={['vendor']}>
+                  <NewSale />
+                </ProtectedRoute>
+              } />
+              <Route path="/vendor/sales/:id" element={
+                <ProtectedRoute allowedRoles={['vendor']}>
+                  <SaleDetail />
                 </ProtectedRoute>
               } />
               <Route path="/vendor/customers" element={
@@ -116,7 +131,17 @@ const App = () => (
               } />
               <Route path="/vendor/repairs" element={
                 <ProtectedRoute allowedRoles={['vendor']}>
-                  <div>Page des réparations vendeur en construction</div>
+                  <RepairsList />
+                </ProtectedRoute>
+              } />
+              <Route path="/vendor/repairs/:id" element={
+                <ProtectedRoute allowedRoles={['vendor']}>
+                  <RepairDetail />
+                </ProtectedRoute>
+              } />
+              <Route path="/vendor/notifications" element={
+                <ProtectedRoute allowedRoles={['vendor']}>
+                  <div>Page des notifications vendeur en construction</div>
                 </ProtectedRoute>
               } />
               
