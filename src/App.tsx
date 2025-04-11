@@ -7,12 +7,15 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import { useAuth } from "./contexts/AuthContext";
+import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 // Owner Routes
 import OwnerDashboard from "./pages/owner/Dashboard";
+import StoresPage from "./pages/owner/Stores";
+import UsersPage from "./pages/owner/Users";
 
 // Vendor Routes
 import VendorDashboard from "./pages/vendor/Dashboard";
@@ -68,7 +71,8 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               {/* Public routes */}
-              <Route path="/" element={<Landing />} />
+              <Route path="/" element={<Index />} />
+              <Route path="/landing" element={<Landing />} />
               <Route path="/login" element={<Auth />} />
               <Route path="/register" element={<Auth />} />
               
@@ -80,17 +84,17 @@ const App = () => (
               } />
               <Route path="/stores" element={
                 <ProtectedRoute allowedRoles={['owner']}>
-                  <div>Stores Page</div>
-                </ProtectedRoute>
-              } />
-              <Route path="/sales" element={
-                <ProtectedRoute allowedRoles={['owner']}>
-                  <div>Sales Page</div>
+                  <StoresPage />
                 </ProtectedRoute>
               } />
               <Route path="/users" element={
                 <ProtectedRoute allowedRoles={['owner']}>
-                  <div>Users Management Page</div>
+                  <UsersPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/sales" element={
+                <ProtectedRoute allowedRoles={['owner']}>
+                  <div>Page de ventes en construction</div>
                 </ProtectedRoute>
               } />
               
@@ -102,17 +106,17 @@ const App = () => (
               } />
               <Route path="/vendor/sales" element={
                 <ProtectedRoute allowedRoles={['vendor']}>
-                  <div>Vendor Sales Page</div>
+                  <div>Page des ventes vendeur en construction</div>
                 </ProtectedRoute>
               } />
               <Route path="/vendor/customers" element={
                 <ProtectedRoute allowedRoles={['vendor']}>
-                  <div>Vendor Customers Page</div>
+                  <div>Page des clients vendeur en construction</div>
                 </ProtectedRoute>
               } />
               <Route path="/vendor/repairs" element={
                 <ProtectedRoute allowedRoles={['vendor']}>
-                  <div>Vendor Repairs Page</div>
+                  <div>Page des réparations vendeur en construction</div>
                 </ProtectedRoute>
               } />
               
@@ -124,12 +128,12 @@ const App = () => (
               } />
               <Route path="/repairer/repairs" element={
                 <ProtectedRoute allowedRoles={['repairer']}>
-                  <div>Repairer Repairs Page</div>
+                  <div>Page des réparations à effectuer en construction</div>
                 </ProtectedRoute>
               } />
               <Route path="/repairer/schedule" element={
                 <ProtectedRoute allowedRoles={['repairer']}>
-                  <div>Repairer Schedule Page</div>
+                  <div>Page de planning réparateur en construction</div>
                 </ProtectedRoute>
               } />
               
