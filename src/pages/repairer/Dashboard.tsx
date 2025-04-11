@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +10,7 @@ import {
   CheckCircle, 
   Smartphone, 
   Laptop, 
-  Tool, 
+  Wrench, 
   Calendar, 
   DollarSign, 
   AlertCircle 
@@ -84,7 +83,7 @@ const RepairerDashboard = () => {
       const repairRef = doc(db, 'repairs', selectedRepair.id);
       await updateDoc(repairRef, {
         status: 'diagnosed',
-        repairerId: currentUser?.uid,
+        repairerId: currentUser?.id,
         estimatedCost,
         estimatedDuration,
         diagnosisNotes: diagnosis
@@ -137,7 +136,7 @@ const RepairerDashboard = () => {
       case 'computer':
         return <Laptop className="h-10 w-10 text-green-500" />;
       default:
-        return <Tool className="h-10 w-10 text-gray-500" />;
+        return <Wrench className="h-10 w-10 text-gray-500" />;
     }
   };
 

@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Bell, CheckCircle, ShoppingBag, Store, Tool, User } from 'lucide-react';
+import { Bell, CheckCircle, ShoppingBag, Store, Wrench, User } from 'lucide-react';
 import { Notification } from '../../types';
 import { useNotifications } from '../../contexts/NotificationContext';
 
@@ -19,7 +19,7 @@ const OwnerNotifications: React.FC<OwnerNotificationsProps> = ({ notifications }
       case 'sale':
         return <ShoppingBag className="h-5 w-5 text-blue-600" />;
       case 'repair':
-        return <Tool className="h-5 w-5 text-green-600" />;
+        return <Wrench className="h-5 w-5 text-green-600" />;
       case 'inventory':
         return <Store className="h-5 w-5 text-yellow-600" />;
       case 'customer':

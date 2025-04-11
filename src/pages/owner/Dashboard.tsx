@@ -6,7 +6,7 @@ import {
   ShoppingBag, 
   Store, 
   Users, 
-  Tool, 
+  Wrench, 
   Bell, 
   BarChart2,
   Package, 
@@ -15,7 +15,7 @@ import {
 import { db, collection, onSnapshot, query, where, orderBy } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../contexts/NotificationContext';
-import { Sale, Store as StoreType, RepairRequest } from '../../types';
+import { Sale, Store as StoreType, RepairRequest, Notification as NotificationType } from '../../types';
 import OwnerStores from '@/components/owner/OwnerStores';
 import OwnerSales from '@/components/owner/OwnerSales';
 import OwnerUsers from '@/components/owner/OwnerUsers';

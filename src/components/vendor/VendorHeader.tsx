@@ -9,7 +9,7 @@ import {
   MessageSquare,
   Settings, 
   ShoppingBag, 
-  Tool, 
+  Wrench, 
   Users, 
   X 
 } from 'lucide-react';

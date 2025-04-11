@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { ChevronDown, Plus, Search, UserPlus, Store, Tools, Users } from 'lucide-react';
+import { ChevronDown, Plus, Search, UserPlus, Store, Wrench, Users } from 'lucide-react';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -54,7 +54,7 @@ const OwnerUsers = () => {
       case 'vendor':
         return <Store className="h-4 w-4 text-blue-500" />;
       case 'repairer':
-        return <Tools className="h-4 w-4 text-green-500" />;
+        return <Wrench className="h-4 w-4 text-green-500" />;
       default:
         return <Users className="h-4 w-4 text-gray-500" />;
     }

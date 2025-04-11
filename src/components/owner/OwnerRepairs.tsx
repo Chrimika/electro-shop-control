@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Tool, 
+  Wrench, 
   Smartphone, 
   Laptop, 
   Clock, 
@@ -79,7 +78,7 @@ const OwnerRepairs: React.FC<OwnerRepairsProps> = ({ pendingCount }) => {
       case 'computer':
         return <Laptop className="h-4 w-4 text-green-500" />;
       default:
-        return <Tool className="h-4 w-4 text-gray-500" />;
+        return <Wrench className="h-4 w-4 text-gray-500" />;
     }
   };
 
@@ -108,7 +107,7 @@ const OwnerRepairs: React.FC<OwnerRepairsProps> = ({ pendingCount }) => {
         <Card>
           <CardContent className="flex items-center p-6">
             <div className="bg-blue-100 p-3 rounded-full mr-4">
-              <Tool className="h-6 w-6 text-blue-700" />
+              <Wrench className="h-6 w-6 text-blue-700" />
             </div>
             <div>
               <p className="text-sm font-medium text-gray-500">En réparation</p>
@@ -195,7 +194,7 @@ const OwnerRepairs: React.FC<OwnerRepairsProps> = ({ pendingCount }) => {
                     <TableRow>
                       <TableCell colSpan={8} className="text-center py-8">
                         <div className="flex flex-col items-center">
-                          <Tool className="h-12 w-12 text-gray-400 mb-4" />
+                          <Wrench className="h-12 w-12 text-gray-400 mb-4" />
                           <p className="text-gray-500">Aucune réparation trouvée</p>
                         </div>
                       </TableCell>
