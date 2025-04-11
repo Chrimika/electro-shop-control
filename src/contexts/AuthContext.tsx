@@ -2,19 +2,10 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { auth, db, doc, getDoc } from '../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-
-type UserRole = 'owner' | 'vendor' | 'repairer' | null;
-
-interface User {
-  uid: string;
-  email: string;
-  role: UserRole;
-  displayName?: string;
-  storeId?: string;
-}
+import { User as UserType } from '../types';
 
 interface AuthContextType {
-  currentUser: User | null;
+  currentUser: UserType | null;
   loading: boolean;
 }
 
@@ -23,7 +14,7 @@ const AuthContext = createContext<AuthContextType>({ currentUser: null, loading:
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<UserType | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -34,11 +25,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (userDoc.exists()) {
           const userData = userDoc.data();
           setCurrentUser({
-            uid: user.uid,
+            id: user.uid,
             email: user.email || '',
             role: userData.role,
             displayName: userData.displayName || user.displayName || '',
-            storeId: userData.storeId
+            storeId: userData.storeId,
+            repairSpecialty: userData.repairSpecialty
           });
         } else {
           setCurrentUser(null);
