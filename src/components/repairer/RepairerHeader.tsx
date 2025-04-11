@@ -8,7 +8,8 @@ import {
   Wrench, 
   Settings, 
   User, 
-  X 
+  X,
+  Calendar 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -54,13 +55,11 @@ const RepairerHeader = () => {
     <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          {/* Logo and main navigation */}
           <div className="flex items-center">
             <Link to="/repairer/dashboard" className="flex items-center">
               <span className="text-xl font-bold text-blue-600 mr-10">ElectroShopControl</span>
             </Link>
             
-            {/* Desktop Navigation */}
             <nav className="hidden md:flex space-x-8">
               <Link to="/repairer/dashboard" className="text-gray-600 hover:text-blue-600">
                 Dashboard
@@ -74,9 +73,7 @@ const RepairerHeader = () => {
             </nav>
           </div>
           
-          {/* Right Side - User Menu & Notifications */}
           <div className="flex items-center space-x-4">
-            {/* Notifications */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative">
@@ -120,7 +117,6 @@ const RepairerHeader = () => {
               </DropdownMenuContent>
             </DropdownMenu>
             
-            {/* User Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="p-0">
@@ -151,7 +147,6 @@ const RepairerHeader = () => {
               </DropdownMenuContent>
             </DropdownMenu>
             
-            {/* Mobile menu button */}
             <Button 
               variant="ghost" 
               size="icon" 
@@ -164,7 +159,6 @@ const RepairerHeader = () => {
         </div>
       </div>
       
-      {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden">
           <div className="fixed inset-y-0 right-0 max-w-xs w-full bg-white shadow-lg p-6 overflow-y-auto">

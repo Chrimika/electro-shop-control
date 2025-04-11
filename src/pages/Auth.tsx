@@ -15,6 +15,14 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+  
+  const validatePassword = (password: string) => {
+    if (password.length < 6) {
+      return 'Le mot de passe doit contenir au moins 6 caractères';
+    }
+    return '';
+  };
   
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,10 +44,21 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
     
+    // Validate inputs
     if (!name || name.length < 2) {
       toast.error('Veuillez entrer un nom valide');
       setLoading(false);
       return;
+    }
+    
+    const passwordValidationError = validatePassword(password);
+    if (passwordValidationError) {
+      setPasswordError(passwordValidationError);
+      toast.error(passwordValidationError);
+      setLoading(false);
+      return;
+    } else {
+      setPasswordError('');
     }
     
     try {
@@ -56,9 +75,17 @@ const Auth = () => {
       
       toast.success('Compte créé avec succès');
       navigate('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erreur d\'inscription:', error);
-      toast.error('Échec de l\'inscription. Veuillez réessayer.');
+      
+      // Provide specific error messages based on Firebase error codes
+      if (error.code === 'auth/email-already-in-use') {
+        toast.error('Cette adresse e-mail est déjà utilisée');
+      } else if (error.code === 'auth/weak-password') {
+        toast.error('Le mot de passe doit être plus fort (minimum 6 caractères)');
+      } else {
+        toast.error('Échec de l\'inscription. Veuillez réessayer.');
+      }
     } finally {
       setLoading(false);
     }
@@ -146,9 +173,18 @@ const Auth = () => {
                     id="password-register" 
                     type="password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setPasswordError('');
+                    }}
                     required 
                   />
+                  {passwordError && (
+                    <p className="text-sm text-red-500">{passwordError}</p>
+                  )}
+                  <p className="text-xs text-gray-500 mt-1">
+                    Le mot de passe doit contenir au moins 6 caractères
+                  </p>
                 </div>
               </CardContent>
               <CardFooter>
