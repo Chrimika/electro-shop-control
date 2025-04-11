@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
@@ -6,11 +5,10 @@ import {
   ChevronDown, 
   LogOut, 
   Menu, 
+  Wrench, 
   Settings, 
-  Tool, 
   User, 
-  X,
-  Calendar
+  X 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -183,7 +181,7 @@ const RepairerHeader = () => {
                 className="text-gray-600 hover:text-blue-600 text-lg font-medium"
                 onClick={toggleMobileMenu}
               >
-                <Tool className="mr-2 h-5 w-5 inline" />
+                <Wrench className="mr-2 h-5 w-5 inline" />
                 Dashboard
               </Link>
               <Link 
@@ -191,7 +189,7 @@ const RepairerHeader = () => {
                 className="text-gray-600 hover:text-blue-600 text-lg font-medium"
                 onClick={toggleMobileMenu}
               >
-                <Tool className="mr-2 h-5 w-5 inline" />
+                <Wrench className="mr-2 h-5 w-5 inline" />
                 Réparations
               </Link>
               <Link 

@@ -6,7 +6,7 @@ import {
   ShoppingBag, 
   Store, 
   Users, 
-  Wrench, 
+  Wrench, // Changed from Tool to Wrench
   Bell, 
   BarChart2,
   Package, 
@@ -163,7 +163,7 @@ const OwnerDashboard = () => {
               <Users className="h-4 w-4" /> Utilisateurs
             </TabsTrigger>
             <TabsTrigger value="repairs" className="flex items-center gap-2">
-              <Tool className="h-4 w-4" /> Réparations
+              <Wrench className="h-4 w-4" /> Réparations
             </TabsTrigger>
             <TabsTrigger value="notifications" className="flex items-center gap-2">
               <Bell className="h-4 w-4" /> 

@@ -166,7 +166,7 @@ const RepairerDashboard = () => {
           <Card>
             <CardContent className="flex items-center p-6">
               <div className="bg-blue-100 p-3 rounded-full mr-4">
-                <Tool className="h-6 w-6 text-blue-700" />
+                <Wrench className="h-6 w-6 text-blue-700" />
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500">En cours</p>

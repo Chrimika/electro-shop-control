@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ShoppingBag, Users, Tool, AlertCircle, Bell, Plus, Search } from 'lucide-react';
+import { ShoppingBag, Users, Wrench, AlertCircle, Bell, Plus, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -142,7 +141,7 @@ const VendorDashboard = () => {
           <Card>
             <CardContent className="flex items-center p-6">
               <div className="bg-green-100 p-3 rounded-full mr-4">
-                <Tool className="h-6 w-6 text-green-700" />
+                <Wrench className="h-6 w-6 text-green-700" />
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500">Réparations</p>
@@ -253,7 +252,7 @@ const VendorDashboard = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Tool className="h-5 w-5" /> Réparations en cours
+                <Wrench className="h-5 w-5" /> Réparations en cours
               </CardTitle>
               <CardDescription>Statut des appareils en réparation</CardDescription>
             </CardHeader>
