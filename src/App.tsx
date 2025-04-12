@@ -16,6 +16,11 @@ import NotFound from "./pages/NotFound";
 import OwnerDashboard from "./pages/owner/Dashboard";
 import StoresPage from "./pages/owner/Stores";
 import UsersPage from "./pages/owner/Users";
+import OwnerSalesPage from "./pages/owner/Sales";
+import OwnerSaleDetail from "./pages/owner/SaleDetail";
+import OwnerNewSale from "./pages/owner/NewSale";
+import ProductsPage from "./pages/owner/Products";
+import CustomersPage from "./pages/owner/Customers";
 
 // Vendor Routes
 import VendorDashboard from "./pages/vendor/Dashboard";
@@ -99,7 +104,27 @@ const App = () => (
               } />
               <Route path="/sales" element={
                 <ProtectedRoute allowedRoles={['owner']}>
-                  <div>Page de ventes en construction</div>
+                  <OwnerSalesPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/sales/:id" element={
+                <ProtectedRoute allowedRoles={['owner']}>
+                  <OwnerSaleDetail />
+                </ProtectedRoute>
+              } />
+              <Route path="/sales/new" element={
+                <ProtectedRoute allowedRoles={['owner']}>
+                  <OwnerNewSale />
+                </ProtectedRoute>
+              } />
+              <Route path="/products" element={
+                <ProtectedRoute allowedRoles={['owner']}>
+                  <ProductsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/customers" element={
+                <ProtectedRoute allowedRoles={['owner']}>
+                  <CustomersPage />
                 </ProtectedRoute>
               } />
               
@@ -126,7 +151,7 @@ const App = () => (
               } />
               <Route path="/vendor/customers" element={
                 <ProtectedRoute allowedRoles={['vendor']}>
-                  <div>Page des clients vendeur en construction</div>
+                  <CustomersPage />
                 </ProtectedRoute>
               } />
               <Route path="/vendor/repairs" element={
