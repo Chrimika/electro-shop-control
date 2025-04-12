@@ -8,8 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Phone, Mail, User, Search, Plus, Filter, UserPlus } from 'lucide-react';
-import { db, collection, onSnapshot } from '../lib/firebase';
-import { Customer } from '../types';
+import { db, collection, onSnapshot } from '@/lib/firebase';
+import { Customer } from '@/types';
 
 const CustomersPage = () => {
   const navigate = useNavigate();
