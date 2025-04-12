@@ -25,7 +25,8 @@ export interface Product {
   category: string;
   description: string;
   supplier: string;
-  basePrice: number;
+  purchasePrice: number; // Prix d'achat (visible uniquement par le propriétaire)
+  sellingPrice: number;  // Prix de vente (visible par tous)
   imageUrl?: string;
   createdAt: Date;
 }

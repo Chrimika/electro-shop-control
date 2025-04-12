@@ -30,7 +30,8 @@ const NewProductForm = () => {
     description: '',
     category: '',
     supplier: '',
-    basePrice: '',
+    purchasePrice: '', // Prix d'achat (fournisseur)
+    sellingPrice: '',  // Prix de vente
   });
 
   // Catégories prédéfinies
@@ -66,9 +67,19 @@ const NewProductForm = () => {
       return;
     }
 
-    if (!product.basePrice || isNaN(Number(product.basePrice)) || Number(product.basePrice) <= 0) {
-      toast.error('Veuillez entrer un prix valide');
+    if (!product.purchasePrice || isNaN(Number(product.purchasePrice)) || Number(product.purchasePrice) < 0) {
+      toast.error('Veuillez entrer un prix d\'achat valide');
       return;
+    }
+
+    if (!product.sellingPrice || isNaN(Number(product.sellingPrice)) || Number(product.sellingPrice) <= 0) {
+      toast.error('Veuillez entrer un prix de vente valide');
+      return;
+    }
+
+    if (Number(product.sellingPrice) < Number(product.purchasePrice)) {
+      toast.warning('Attention: le prix de vente est inférieur au prix d\'achat');
+      // Continuer malgré l'avertissement
     }
 
     try {
@@ -79,7 +90,8 @@ const NewProductForm = () => {
         description: product.description,
         category: product.category,
         supplier: product.supplier,
-        basePrice: Number(product.basePrice),
+        purchasePrice: Number(product.purchasePrice),
+        sellingPrice: Number(product.sellingPrice),
         createdAt: serverTimestamp()
       });
       
@@ -152,22 +164,49 @@ const NewProductForm = () => {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="basePrice">Prix de base*</Label>
-            <div className="relative">
-              <Input
-                id="basePrice"
-                name="basePrice"
-                type="number"
-                min="0"
-                step="0.01"
-                value={product.basePrice}
-                onChange={handleChange}
-                placeholder="0.00"
-                className="pr-8"
-                required
-              />
-              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">€</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="purchasePrice">
+                Prix d'achat (fournisseur)*
+                <span className="text-xs text-gray-500 ml-1">(visible uniquement par le propriétaire)</span>
+              </Label>
+              <div className="relative">
+                <Input
+                  id="purchasePrice"
+                  name="purchasePrice"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={product.purchasePrice}
+                  onChange={handleChange}
+                  placeholder="0"
+                  className="pr-16"
+                  required
+                />
+                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">FCFA</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="sellingPrice">
+                Prix de vente*
+                <span className="text-xs text-gray-500 ml-1">(visible par tous)</span>
+              </Label>
+              <div className="relative">
+                <Input
+                  id="sellingPrice"
+                  name="sellingPrice"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={product.sellingPrice}
+                  onChange={handleChange}
+                  placeholder="0"
+                  className="pr-16"
+                  required
+                />
+                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">FCFA</span>
+              </div>
             </div>
           </div>
         </CardContent>
