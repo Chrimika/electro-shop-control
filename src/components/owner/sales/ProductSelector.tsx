@@ -77,7 +77,7 @@ const ProductSelector = ({
                         <Badge variant="outline">{product.category}</Badge>
                       </div>
                       <div className="text-right">
-                        <div className="font-bold">{product.basePrice} €</div>
+                        <div className="font-bold">{product.sellingPrice} FCFA</div>
                         <div className="text-xs">
                           {inStock > 0 ? (
                             <span className="text-green-600">En stock: {inStock}</span>

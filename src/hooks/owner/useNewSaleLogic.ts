@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -17,7 +16,7 @@ import {
 import { Product, Customer, SaleItem, SaleType } from '../../types';
 import { toast } from 'sonner';
 
-export const useNewSaleLogic = () => {
+export function useNewSaleLogic() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   
@@ -42,7 +41,6 @@ export const useNewSaleLogic = () => {
   const [showCustomerWarning, setShowCustomerWarning] = useState(false);
   
   useEffect(() => {
-    // Fetch stores
     const fetchStores = async () => {
       try {
         const storesQuery = query(collection(db, 'stores'));
@@ -60,7 +58,6 @@ export const useNewSaleLogic = () => {
     
     fetchStores();
     
-    // Fetch customers
     const fetchCustomers = async () => {
       try {
         const customersQuery = query(collection(db, 'customers'));
@@ -82,7 +79,6 @@ export const useNewSaleLogic = () => {
   }, []);
   
   useEffect(() => {
-    // Filter customers based on search query
     if (!customerSearchQuery.trim()) {
       setFilteredCustomers(customers);
     } else {
@@ -98,22 +94,18 @@ export const useNewSaleLogic = () => {
   }, [customerSearchQuery, customers]);
   
   useEffect(() => {
-    // Update total whenever cart changes
     const newTotal = cart.reduce((sum, item) => sum + item.totalPrice, 0);
     setTotal(newTotal);
-    // If direct sale, set paid amount to total automatically
     if (saleType === 'direct') {
       setPaidAmount(newTotal);
     }
   }, [cart, saleType]);
   
   useEffect(() => {
-    // Fetch products and inventory when store is selected
     const fetchProductsAndInventory = async () => {
       if (!selectedStore) return;
       
       try {
-        // Fetch all products
         const productsQuery = query(collection(db, 'products'));
         const productsSnapshot = await getDocs(productsQuery);
         const productsData = productsSnapshot.docs.map(doc => ({
@@ -125,7 +117,6 @@ export const useNewSaleLogic = () => {
         setProducts(productsData);
         setFilteredProducts(productsData);
         
-        // Fetch inventory for the selected store
         const inventoryQuery = query(
           collection(db, 'storeInventory'),
           where('storeId', '==', selectedStore)
@@ -148,7 +139,6 @@ export const useNewSaleLogic = () => {
   }, [selectedStore]);
   
   useEffect(() => {
-    // Filter products based on search query
     if (!searchQuery.trim()) {
       setFilteredProducts(products);
     } else {
@@ -163,32 +153,44 @@ export const useNewSaleLogic = () => {
   }, [searchQuery, products]);
   
   const handleAddToCart = (product: Product) => {
-    // Check if product is already in cart
-    const existingItem = cart.find(item => item.productId === product.id);
+    const existingItemIndex = cart.findIndex(item => item.productId === product.id);
     
-    if (existingItem) {
-      // Increment quantity if already in cart
-      const updatedCart = cart.map(item =>
-        item.productId === product.id
-          ? {
-              ...item,
-              quantity: item.quantity + 1,
-              totalPrice: (item.quantity + 1) * item.unitPrice
-            }
-          : item
-      );
+    if (existingItemIndex >= 0) {
+      const updatedCart = [...cart];
+      const item = updatedCart[existingItemIndex];
+      
+      const availableStock = storeInventory[product.id] || 0;
+      if (item.quantity >= availableStock) {
+        toast.error(`Stock insuffisant. Maximum disponible: ${availableStock}`);
+        return;
+      }
+      
+      item.quantity += 1;
+      item.totalPrice = item.quantity * item.unitPrice;
+      updatedCart[existingItemIndex] = item;
       setCart(updatedCart);
     } else {
-      // Add new item to cart
       const newItem: SaleItem = {
         productId: product.id,
         productName: product.name,
         quantity: 1,
-        unitPrice: product.basePrice,
-        totalPrice: product.basePrice
+        unitPrice: product.sellingPrice,
+        totalPrice: product.sellingPrice
       };
       setCart([...cart, newItem]);
     }
+    
+    calculateTotal([...cart, { 
+      productId: product.id,
+      productName: product.name,
+      quantity: existingItemIndex >= 0 ? cart[existingItemIndex].quantity + 1 : 1,
+      unitPrice: product.sellingPrice,
+      totalPrice: existingItemIndex >= 0 
+        ? (cart[existingItemIndex].quantity + 1) * product.sellingPrice 
+        : product.sellingPrice
+    }]);
+    
+    toast.success(`${product.name} ajouté au panier`);
   };
   
   const handleRemoveFromCart = (productId: string) => {
@@ -219,7 +221,6 @@ export const useNewSaleLogic = () => {
   };
   
   const handleSubmitSale = async () => {
-    // Validation
     if (!selectedStore) {
       toast.error('Veuillez sélectionner une boutique');
       return;
@@ -238,7 +239,6 @@ export const useNewSaleLogic = () => {
     try {
       setIsSubmitting(true);
       
-      // Create the sale object with the proper type that includes the deadline property
       const saleData: {
         storeId: string;
         vendorId: string | undefined;
@@ -269,24 +269,20 @@ export const useNewSaleLogic = () => {
         items: cart,
         saleType,
         totalAmount: total,
-        paidAmount: Math.min(paidAmount, total), // Cannot pay more than total
+        paidAmount: Math.min(paidAmount, total),
         createdAt: Timestamp.now(),
         status: paidAmount >= total ? 'completed' : 'pending'
       };
       
-      // Add deadline if payment is not complete
       if (paidAmount < total) {
         const deadline = new Date();
-        deadline.setMonth(deadline.getMonth() + 1); // Default: 1 month
+        deadline.setMonth(deadline.getMonth() + 1);
         saleData.deadline = deadline;
       }
       
-      // Save to database
       const saleRef = await addDoc(collection(db, 'sales'), saleData);
       
-      // Update inventory
       cart.forEach(async (item) => {
-        // Get current inventory
         const inventoryQuery = query(
           collection(db, 'storeInventory'),
           where('storeId', '==', selectedStore),
@@ -299,9 +295,8 @@ export const useNewSaleLogic = () => {
           const inventoryDoc = inventorySnapshot.docs[0];
           const currentQuantity = inventoryDoc.data().quantity || 0;
           
-          // Update inventory
           await updateDoc(doc(db, 'storeInventory', inventoryDoc.id), {
-            quantity: Math.max(0, currentQuantity - item.quantity), // Prevent negative inventory
+            quantity: Math.max(0, currentQuantity - item.quantity),
             updatedAt: serverTimestamp()
           });
         }
@@ -316,7 +311,7 @@ export const useNewSaleLogic = () => {
       setIsSubmitting(false);
     }
   };
-
+  
   return {
     products,
     filteredProducts,
@@ -346,4 +341,4 @@ export const useNewSaleLogic = () => {
     updateItemQuantity,
     handleSubmitSale
   };
-};
+}

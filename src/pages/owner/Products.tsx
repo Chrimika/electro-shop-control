@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Card, 
@@ -57,8 +56,8 @@ import {
   Filter,
 } from 'lucide-react';
 import OwnerHeader from '@/components/owner/OwnerHeader';
-import { db, collection, getDocs, query, orderBy, doc, getDoc, addDoc, updateDoc, deleteDoc, serverTimestamp } from '../../lib/firebase';
-import { Product } from '../../types';
+import { db, collection, getDocs, query, orderBy, doc, getDoc, addDoc, updateDoc, deleteDoc, serverTimestamp } from '@/lib/firebase';
+import { Product } from '@/types';
 import { toast } from 'sonner';
 
 interface ExtendedProduct extends Product {
@@ -80,7 +79,6 @@ const ProductsPage = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [categories, setCategories] = useState<string[]>([]);
   
-  // Form states
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -91,7 +89,8 @@ const ProductsPage = () => {
     description: '',
     category: '',
     supplier: '',
-    basePrice: 0,
+    purchasePrice: 0,
+    sellingPrice: 0,
   });
   
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -101,7 +100,6 @@ const ProductsPage = () => {
   }, []);
   
   useEffect(() => {
-    // Apply filters
     let filtered = [...products];
     
     if (searchQuery) {
@@ -126,7 +124,6 @@ const ProductsPage = () => {
     try {
       setLoading(true);
       
-      // Get products
       const productsQuery = query(
         collection(db, 'products'),
         orderBy('createdAt', 'desc')
@@ -139,12 +136,12 @@ const ProductsPage = () => {
         category: doc.data().category || '',
         description: doc.data().description || '',
         supplier: doc.data().supplier || '',
-        basePrice: doc.data().basePrice || 0,
+        purchasePrice: doc.data().purchasePrice || 0,
+        sellingPrice: doc.data().sellingPrice || 0,
         imageUrl: doc.data().imageUrl || undefined,
         createdAt: doc.data().createdAt?.toDate() || new Date(),
       } as ExtendedProduct));
       
-      // Get inventory data
       const inventorySnapshot = await getDocs(collection(db, 'storeInventory'));
       const storesSnapshot = await getDocs(collection(db, 'stores'));
       
@@ -153,7 +150,6 @@ const ProductsPage = () => {
         storesMap.set(doc.id, doc.data().name);
       });
       
-      // Group inventory by product
       const productInventory = new Map();
       
       inventorySnapshot.docs.forEach(doc => {
@@ -179,14 +175,12 @@ const ProductsPage = () => {
         });
       });
       
-      // Add inventory data to products
       productsArray.forEach(product => {
         if (productInventory.has(product.id)) {
           product.stockInfo = productInventory.get(product.id);
         }
       });
       
-      // Extract unique categories
       const uniqueCategories = Array.from(
         new Set(productsArray.map(product => product.category))
       ).filter(Boolean);
@@ -207,8 +201,7 @@ const ProductsPage = () => {
     try {
       setIsSubmitting(true);
       
-      // Validation
-      if (!formData.name || !formData.category || formData.basePrice <= 0) {
+      if (!formData.name || !formData.category || formData.purchasePrice < 0 || formData.sellingPrice <= 0) {
         toast.error('Veuillez remplir tous les champs obligatoires');
         setIsSubmitting(false);
         return;
@@ -240,8 +233,7 @@ const ProductsPage = () => {
     try {
       setIsSubmitting(true);
       
-      // Validation
-      if (!formData.name || !formData.category || formData.basePrice <= 0) {
+      if (!formData.name || !formData.category || formData.purchasePrice < 0 || formData.sellingPrice <= 0) {
         toast.error('Veuillez remplir tous les champs obligatoires');
         setIsSubmitting(false);
         return;
@@ -271,7 +263,6 @@ const ProductsPage = () => {
     try {
       setIsSubmitting(true);
       
-      // Check if product is in inventory
       if (currentProduct.stockInfo && currentProduct.stockInfo.total > 0) {
         toast.error('Impossible de supprimer un produit en stock. Videz l\'inventaire d\'abord.');
         setIsSubmitting(false);
@@ -300,7 +291,8 @@ const ProductsPage = () => {
       description: product.description,
       category: product.category,
       supplier: product.supplier,
-      basePrice: product.basePrice,
+      purchasePrice: product.purchasePrice,
+      sellingPrice: product.sellingPrice,
     });
     setIsEditDialogOpen(true);
   };
@@ -316,7 +308,8 @@ const ProductsPage = () => {
       description: '',
       category: '',
       supplier: '',
-      basePrice: 0,
+      purchasePrice: 0,
+      sellingPrice: 0,
     });
     setCurrentProduct(null);
   };
@@ -388,15 +381,31 @@ const ProductsPage = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="price">Prix de base (€)*</Label>
+                  <Label htmlFor="price-purchase">Prix d'achat (FCFA)*</Label>
                   <Input
-                    id="price"
+                    id="price-purchase"
                     type="number"
                     min="0"
-                    step="0.01"
-                    value={formData.basePrice}
-                    onChange={(e) => setFormData({...formData, basePrice: parseFloat(e.target.value)})}
+                    step="1"
+                    value={formData.purchasePrice}
+                    onChange={(e) => setFormData({...formData, purchasePrice: parseFloat(e.target.value) || 0})}
+                    className="pr-12"
                   />
+                  <span className="text-xs text-gray-500">Visible uniquement par le propriétaire</span>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="price-selling">Prix de vente (FCFA)*</Label>
+                  <Input
+                    id="price-selling"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={formData.sellingPrice}
+                    onChange={(e) => setFormData({...formData, sellingPrice: parseFloat(e.target.value) || 0})}
+                    className="pr-12"
+                  />
+                  <span className="text-xs text-gray-500">Visible par tous</span>
                 </div>
                 
                 <div className="space-y-2">
@@ -531,7 +540,10 @@ const ProductsPage = () => {
                         </TableCell>
                         <TableCell>{product.supplier || '-'}</TableCell>
                         <TableCell className="text-right font-medium">
-                          {product.basePrice.toFixed(2)} €
+                          {product.sellingPrice.toFixed(0)} FCFA
+                          <div className="text-xs text-gray-500">
+                            Achat: {product.purchasePrice.toFixed(0)} FCFA
+                          </div>
                         </TableCell>
                         <TableCell className="text-right">
                           {product.stockInfo ? (
@@ -589,7 +601,6 @@ const ProductsPage = () => {
         </Card>
       </main>
       
-      {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -640,15 +651,31 @@ const ProductsPage = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="edit-price">Prix de base (€)*</Label>
+              <Label htmlFor="edit-price-purchase">Prix d'achat (FCFA)*</Label>
               <Input
-                id="edit-price"
+                id="edit-price-purchase"
                 type="number"
                 min="0"
-                step="0.01"
-                value={formData.basePrice}
-                onChange={(e) => setFormData({...formData, basePrice: parseFloat(e.target.value)})}
+                step="1"
+                value={formData.purchasePrice}
+                onChange={(e) => setFormData({...formData, purchasePrice: parseFloat(e.target.value) || 0})}
+                className="pr-12"
               />
+              <span className="text-xs text-gray-500">Visible uniquement par le propriétaire</span>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="edit-price-selling">Prix de vente (FCFA)*</Label>
+              <Input
+                id="edit-price-selling"
+                type="number"
+                min="0"
+                step="1"
+                value={formData.sellingPrice}
+                onChange={(e) => setFormData({...formData, sellingPrice: parseFloat(e.target.value) || 0})}
+                className="pr-12"
+              />
+              <span className="text-xs text-gray-500">Visible par tous</span>
             </div>
             
             <div className="space-y-2">
@@ -685,7 +712,6 @@ const ProductsPage = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -715,7 +741,10 @@ const ProductsPage = () => {
           <div className="py-4">
             <p><strong>Nom:</strong> {currentProduct?.name}</p>
             <p><strong>Catégorie:</strong> {currentProduct?.category}</p>
-            <p><strong>Prix:</strong> {currentProduct?.basePrice.toFixed(2)} €</p>
+            <p><strong>Prix:</strong> {currentProduct?.sellingPrice.toFixed(0)} FCFA</p>
+            <div className="text-xs text-gray-500">
+              Achat: {currentProduct?.purchasePrice.toFixed(0)} FCFA
+            </div>
           </div>
           
           <DialogFooter>
