@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -16,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { db, collection, onSnapshot } from '../../lib/firebase';
+import { useNavigate } from 'react-router-dom';
 
 interface OwnerStockProps {
   lowStockCount: number;
@@ -34,6 +34,7 @@ interface StockItem {
 }
 
 const OwnerStock: React.FC<OwnerStockProps> = ({ lowStockCount }) => {
+  const navigate = useNavigate();
   const [stock, setStock] = useState<StockItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -41,20 +42,17 @@ const OwnerStock: React.FC<OwnerStockProps> = ({ lowStockCount }) => {
   useEffect(() => {
     setLoading(true);
     
-    // Simulation de chargement de données depuis Firestore
     const unsubscribe = onSnapshot(collection(db, 'storeInventory'), (snapshot) => {
-      // Dans une implémentation réelle, nous ferions des jointures ou des requêtes supplémentaires
-      // pour obtenir toutes les informations nécessaires
       const stockData = snapshot.docs.map(doc => {
         return {
           id: doc.id,
           productId: doc.data().productId || '',
-          productName: doc.data().productName || 'Produit inconnu', // Devrait venir d'une jointure
+          productName: doc.data().productName || 'Produit inconnu',
           category: doc.data().category || 'Sans catégorie',
           quantity: doc.data().quantity || 0,
           minQuantity: doc.data().minQuantity || 5,
           storeId: doc.data().storeId || '',
-          storeName: doc.data().storeName || 'Boutique inconnue', // Devrait venir d'une jointure
+          storeName: doc.data().storeName || 'Boutique inconnue',
           lastUpdated: doc.data().updatedAt ? new Date(doc.data().updatedAt.toDate()) : new Date()
         };
       });
@@ -93,7 +91,10 @@ const OwnerStock: React.FC<OwnerStockProps> = ({ lowStockCount }) => {
           <Button variant="outline" className="flex items-center gap-2">
             <FileBarChart className="h-4 w-4" /> Rapport
           </Button>
-          <Button className="flex items-center gap-2">
+          <Button 
+            className="flex items-center gap-2"
+            onClick={() => navigate('/products/new')}
+          >
             <Plus className="h-4 w-4" /> Nouveau produit
           </Button>
         </div>

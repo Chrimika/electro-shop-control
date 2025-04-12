@@ -20,7 +20,9 @@ import OwnerSalesPage from "./pages/owner/Sales";
 import OwnerSaleDetail from "./pages/owner/SaleDetail";
 import OwnerNewSale from "./pages/owner/NewSale";
 import ProductsPage from "./pages/owner/Products";
+import OwnerNewProduct from "./pages/owner/NewProduct"; // Nouvelle page
 import CustomersPage from "./pages/owner/Customers";
+import OwnerNewCustomer from "./pages/owner/NewCustomer"; // Nouvelle page
 import StockManagement from "./pages/owner/StockManagement";
 
 // Vendor Routes
@@ -123,9 +125,19 @@ const App = () => (
                   <ProductsPage />
                 </ProtectedRoute>
               } />
+              <Route path="/products/new" element={
+                <ProtectedRoute allowedRoles={['owner']}>
+                  <OwnerNewProduct />
+                </ProtectedRoute>
+              } />
               <Route path="/customers" element={
                 <ProtectedRoute allowedRoles={['owner']}>
                   <CustomersPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/customers/new" element={
+                <ProtectedRoute allowedRoles={['owner']}>
+                  <OwnerNewCustomer />
                 </ProtectedRoute>
               } />
               <Route path="/stock" element={
