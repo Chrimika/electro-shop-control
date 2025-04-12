@@ -350,8 +350,25 @@ const OwnerNewSale = () => {
     try {
       setIsSubmitting(true);
       
-      // Create the sale object
-      const saleData = {
+      // Create the sale object with the proper type that includes the deadline property
+      const saleData: {
+        storeId: string;
+        vendorId: string | undefined;
+        customer: {
+          id: string;
+          name: string;
+          phone: string;
+          email?: string;
+          isBadged: boolean;
+        } | null;
+        items: SaleItem[];
+        saleType: SaleType;
+        totalAmount: number;
+        paidAmount: number;
+        createdAt: any;
+        status: string;
+        deadline?: Date;
+      } = {
         storeId: selectedStore,
         vendorId: currentUser?.id,
         customer: selectedCustomer ? {
