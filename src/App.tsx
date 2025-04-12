@@ -21,6 +21,7 @@ import OwnerSaleDetail from "./pages/owner/SaleDetail";
 import OwnerNewSale from "./pages/owner/NewSale";
 import ProductsPage from "./pages/owner/Products";
 import CustomersPage from "./pages/owner/Customers";
+import StockManagement from "./pages/owner/StockManagement";
 
 // Vendor Routes
 import VendorDashboard from "./pages/vendor/Dashboard";
@@ -125,6 +126,11 @@ const App = () => (
               <Route path="/customers" element={
                 <ProtectedRoute allowedRoles={['owner']}>
                   <CustomersPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/stock" element={
+                <ProtectedRoute allowedRoles={['owner']}>
+                  <StockManagement />
                 </ProtectedRoute>
               } />
               
