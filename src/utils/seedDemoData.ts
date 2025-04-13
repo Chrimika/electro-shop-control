@@ -208,9 +208,9 @@ export const seedDemoData = async (currentUser: User): Promise<void> => {
     const saleTypeOptions: SaleType[] = ['direct', 'installment', 'partialPaid', 'deliveredNotPaid'];
     // Créer une distribution avec plus de ventes directes
     const randomIndex = Math.floor(Math.random() * 10);
-    const saleType = randomIndex < 6 
+    const saleType: SaleType = randomIndex < 6 
       ? 'direct'                                    // 60% chance de vente directe
-      : saleTypeOptions[Math.floor(Math.random() * 4)]; // 40% chance pour les autres types
+      : saleTypeOptions[Math.floor(Math.random() * saleTypeOptions.length)]; // 40% chance pour les autres types
 
     // Déterminer le montant payé en fonction du type de vente
     let paidAmount = 0;

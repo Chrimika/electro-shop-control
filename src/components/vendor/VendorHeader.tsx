@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Bell, 
@@ -8,10 +8,8 @@ import {
   Menu, 
   MessageSquare,
   Settings, 
-  ShoppingBag, 
-  Wrench, 
-  Users, 
-  X 
+  X,
+  Users
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -23,20 +21,55 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../contexts/NotificationContext';
-import { auth, signOut } from '../../lib/firebase';
+import { auth, signOut, db, doc, getDoc } from '../../lib/firebase';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import { User } from '@/types';
 
 const VendorHeader = () => {
   const { currentUser } = useAuth();
-  const { notifications, unreadCount } = useNotifications();
+  const { notifications, unreadCount, addNotification } = useNotifications();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationTitle, setNotificationTitle] = useState('');
   const [notificationMessage, setNotificationMessage] = useState('');
+  const [storeOwner, setStoreOwner] = useState<User | null>(null);
+  
+  // Récupérer l'ID du propriétaire du magasin
+  useEffect(() => {
+    const fetchStoreOwner = async () => {
+      if (currentUser?.storeId) {
+        try {
+          const storeRef = doc(db, 'stores', currentUser.storeId);
+          const storeDoc = await getDoc(storeRef);
+          
+          if (storeDoc.exists()) {
+            const storeData = storeDoc.data();
+            const ownerId = storeData.ownerId;
+            
+            if (ownerId) {
+              const ownerRef = doc(db, 'users', ownerId);
+              const ownerDoc = await getDoc(ownerRef);
+              
+              if (ownerDoc.exists()) {
+                setStoreOwner({
+                  id: ownerDoc.id,
+                  ...ownerDoc.data()
+                } as User);
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Erreur lors de la récupération du propriétaire du magasin:", error);
+        }
+      }
+    };
+    
+    fetchStoreOwner();
+  }, [currentUser]);
 
   const handleLogout = async () => {
     try {
@@ -58,11 +91,33 @@ const VendorHeader = () => {
     setMobileMenuOpen(!mobileMenuOpen);
   };
 
-  const handleSendNotification = () => {
-    // Dans une implémentation réelle, nous enverrions la notification à Firestore
-    toast.success('Notification envoyée au propriétaire');
-    setNotificationTitle('');
-    setNotificationMessage('');
+  const handleSendNotification = async () => {
+    if (!notificationTitle.trim() || !notificationMessage.trim()) {
+      toast.error('Veuillez remplir tous les champs');
+      return;
+    }
+    
+    if (!storeOwner) {
+      toast.error('Impossible de trouver le propriétaire du magasin');
+      return;
+    }
+    
+    try {
+      await addNotification({
+        title: notificationTitle,
+        message: notificationMessage,
+        type: 'system',
+        recipientId: storeOwner.id,
+        isRead: false
+      });
+      
+      toast.success('Notification envoyée au propriétaire');
+      setNotificationTitle('');
+      setNotificationMessage('');
+    } catch (error) {
+      console.error('Erreur lors de l\'envoi de la notification:', error);
+      toast.error('Erreur lors de l\'envoi de la notification');
+    }
   };
 
   if (!currentUser) return null;

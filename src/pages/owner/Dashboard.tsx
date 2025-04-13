@@ -28,6 +28,8 @@ const OwnerDashboard = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [lowStockCount, setLowStockCount] = useState<number>(0);
   const [pendingRepairsCount, setPendingRepairsCount] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [demoDataInitialized, setDemoDataInitialized] = useState<boolean>(false);
   
   // Load data when component mounts
   useEffect(() => {
@@ -44,16 +46,27 @@ const OwnerDashboard = () => {
           ...doc.data()
         } as Store));
         setStores(storesData);
+        
+        if (!demoDataInitialized && storesData.length === 0) {
+          // Initialize demo data if no stores exist
+          initDemoData();
+          setDemoDataInitialized(true);
+        }
       });
       
-      // Load recent sales
-      const salesQuery = query(collection(db, 'sales'));
-      const unsubscribeSales = onSnapshot(salesQuery, (snapshot) => {
-        const salesData = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate() || new Date()
-        } as Sale));
+      // Load recent sales for this owner's stores
+      const unsubscribeSales = onSnapshot(query(collection(db, 'sales')), (snapshot) => {
+        const salesData = snapshot.docs
+          .map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            createdAt: doc.data().createdAt?.toDate() || new Date()
+          } as Sale))
+          .filter(sale => {
+            // Filter sales from stores owned by current user
+            return stores.some(store => store.id === sale.storeId);
+          });
+          
         setRecentSales(salesData);
       });
       
@@ -72,12 +85,13 @@ const OwnerDashboard = () => {
         setNotifications(notificationsData);
       });
       
-      // Count low stock items
-      const inventoryQuery = query(collection(db, 'storeInventory'));
-      const unsubscribeInventory = onSnapshot(inventoryQuery, (snapshot) => {
+      // Count low stock items for this owner's stores
+      const unsubscribeInventory = onSnapshot(query(collection(db, 'storeInventory')), (snapshot) => {
         const lowStockItems = snapshot.docs.filter(doc => {
           const data = doc.data();
-          return data.quantity < (data.minQuantity || 5);
+          // Only count inventory items from stores owned by this user
+          const belongsToOwner = stores.some(store => store.id === data.storeId);
+          return belongsToOwner && data.quantity < (data.minQuantity || 5);
         });
         setLowStockCount(lowStockItems.length);
       });
@@ -89,20 +103,15 @@ const OwnerDashboard = () => {
       );
       
       const unsubscribeRepairs = onSnapshot(repairsQuery, (snapshot) => {
-        setPendingRepairsCount(snapshot.docs.length);
+        const repairsData = snapshot.docs.filter(doc => {
+          const data = doc.data();
+          // Filter repairs for this owner's stores
+          return stores.some(store => store.id === data.storeId);
+        });
+        setPendingRepairsCount(repairsData.length);
       });
       
-      // Initialize demo data
-      const initDemoData = async () => {
-        try {
-          await seedDemoData(currentUser);
-          toast.success("Données de démonstration initialisées avec succès");
-        } catch (error) {
-          console.error('Erreur lors du chargement des données de démo:', error);
-        }
-      };
-      
-      initDemoData();
+      setIsLoading(false);
       
       // Cleanup subscriptions
       return () => {
@@ -113,7 +122,34 @@ const OwnerDashboard = () => {
         unsubscribeRepairs();
       };
     }
-  }, [currentUser]);
+  }, [currentUser, stores]);
+  
+  // Initialize demo data
+  const initDemoData = async () => {
+    try {
+      if (!currentUser) return;
+      
+      await seedDemoData(currentUser);
+      toast.success("Données de démonstration initialisées avec succès");
+    } catch (error) {
+      console.error('Erreur lors du chargement des données de démo:', error);
+      toast.error("Erreur lors de l'initialisation des données de démonstration");
+    }
+  };
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-100">
+        <OwnerHeader />
+        <main className="container mx-auto px-4 py-8">
+          <div className="text-center py-12">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
+            <p className="mt-4 text-gray-600">Chargement des données...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen bg-gray-100">
