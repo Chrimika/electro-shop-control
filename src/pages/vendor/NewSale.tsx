@@ -136,8 +136,8 @@ const NewSale = () => {
         productId: selectedProduct.id,
         productName: selectedProduct.name,
         quantity: quantity,
-        unitPrice: selectedProduct.basePrice,
-        totalPrice: selectedProduct.basePrice * quantity
+        unitPrice: selectedProduct.sellingPrice,
+        totalPrice: selectedProduct.sellingPrice * quantity
       };
       
       setCartItems([...cartItems, newItem]);
@@ -271,7 +271,7 @@ const NewSale = () => {
                           <h3 className="font-medium">{product.name}</h3>
                           <p className="text-sm text-gray-500">{product.category}</p>
                         </div>
-                        <p className="font-bold">{product.basePrice} €</p>
+                        <p className="font-bold">{product.sellingPrice} FCFA</p>
                       </CardContent>
                     </Card>
                   ))}
@@ -418,12 +418,12 @@ const NewSale = () => {
                   {selectedProduct && (
                     <div className="flex justify-between">
                       <span>Prix unitaire:</span>
-                      <span>{selectedProduct.basePrice} €</span>
+                      <span>{selectedProduct.sellingPrice} FCFA</span>
                     </div>
                   )}
                   <div className="flex justify-between font-bold">
                     <span>Total:</span>
-                    <span>{selectedProduct ? selectedProduct.basePrice * quantity : 0} €</span>
+                    <span>{selectedProduct ? selectedProduct.sellingPrice * quantity : 0} FCFA</span>
                   </div>
                 </div>
                 <DialogFooter>

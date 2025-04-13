@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Card, 
@@ -68,7 +67,6 @@ const StockManagement = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   
-  // Dialog states
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
   const [currentQuantity, setCurrentQuantity] = useState<number>(0);
@@ -88,7 +86,6 @@ const StockManagement = () => {
     try {
       setLoading(true);
       
-      // Fetch stores
       const storesQuery = query(collection(db, 'stores'));
       const storesSnapshot = await getDocs(storesQuery);
       const storesData = storesSnapshot.docs.map(doc => ({
@@ -101,7 +98,6 @@ const StockManagement = () => {
         setSelectedStore(storesData[0].id);
       }
       
-      // Fetch products
       const productsQuery = query(collection(db, 'products'));
       const productsSnapshot = await getDocs(productsQuery);
       const productsData = productsSnapshot.docs.map(doc => ({
@@ -111,7 +107,6 @@ const StockManagement = () => {
       } as Product));
       setProducts(productsData);
       
-      // Fetch inventory
       const inventoryQuery = query(collection(db, 'storeInventory'));
       const inventorySnapshot = await getDocs(inventoryQuery);
       
@@ -172,7 +167,6 @@ const StockManagement = () => {
         updatedAt: new Date()
       }, { merge: true });
       
-      // Update local state
       const updatedInventory = new Map(inventory);
       
       if (!updatedInventory.has(selectedStore)) {
@@ -294,7 +288,7 @@ const StockManagement = () => {
                   <TableRow>
                     <TableHead>Produit</TableHead>
                     <TableHead>Catégorie</TableHead>
-                    <TableHead className="text-right">Prix de base</TableHead>
+                    <TableHead className="text-right">Prix de vente</TableHead>
                     <TableHead className="text-center">Quantité</TableHead>
                     <TableHead className="text-center">Statut</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -311,7 +305,7 @@ const StockManagement = () => {
                           <div className="text-sm text-gray-500 truncate">{product.description}</div>
                         </TableCell>
                         <TableCell>{product.category}</TableCell>
-                        <TableCell className="text-right">{product.basePrice.toFixed(2)} €</TableCell>
+                        <TableCell className="text-right">{product.sellingPrice.toFixed(2)} FCFA</TableCell>
                         <TableCell className="text-center">{quantity}</TableCell>
                         <TableCell className="text-center">
                           {getStockStatusBadge(quantity)}
@@ -336,7 +330,6 @@ const StockManagement = () => {
         </Card>
       </main>
       
-      {/* Update Stock Dialog */}
       <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

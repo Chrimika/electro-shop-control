@@ -39,6 +39,10 @@ export function useNewSaleLogic() {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCustomerWarning, setShowCustomerWarning] = useState(false);
+
+  const calculateTotal = (items: SaleItem[]) => {
+    return items.reduce((sum, item) => sum + item.totalPrice, 0);
+  };
   
   useEffect(() => {
     const fetchStores = async () => {
