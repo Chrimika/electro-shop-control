@@ -36,23 +36,33 @@ interface ProductFormValues {
   sellingPrice: number;
 }
 
-// Liste des catégories prédéfinies pertinentes pour l'application
+// Liste des catégories prédéfinies pertinentes pour l'application de réparation et vente électronique
 const PRODUCT_CATEGORIES = [
   { value: "smartphones", label: "Smartphones", icon: "smartphone" },
+  { value: "accessoires_tel", label: "Accessoires téléphone", icon: "headphones" },
+  { value: "ecrans_tel", label: "Écrans téléphone", icon: "smartphone" },
+  { value: "batteries_tel", label: "Batteries téléphone", icon: "battery" },
   { value: "ordinateurs", label: "Ordinateurs", icon: "laptop" },
+  { value: "composants_pc", label: "Composants PC", icon: "cpu" },
+  { value: "pieces_ordinateur", label: "Pièces ordinateur", icon: "chip" },
   { value: "tablettes", label: "Tablettes", icon: "tablet" },
-  { value: "accessoires", label: "Accessoires", icon: "headphones" },
-  { value: "pieces_detachees", label: "Pièces détachées", icon: "cpu" },
-  { value: "ecrans", label: "Écrans", icon: "monitor" },
+  { value: "ecrans_tab", label: "Écrans tablette", icon: "tablet" },
+  { value: "accessoires_tab", label: "Accessoires tablette", icon: "usb" },
+  { value: "outils", label: "Outils de réparation", icon: "wrench" },
+  { value: "kits", label: "Kits de réparation", icon: "tools" },
+  { value: "consommables", label: "Consommables", icon: "package" },
   { value: "cables", label: "Câbles & Connecteurs", icon: "cable" },
-  { value: "peripheriques", label: "Périphériques", icon: "mouse" },
+  { value: "chargeurs", label: "Chargeurs", icon: "battery-charging" },
   { value: "stockage", label: "Stockage", icon: "hard-drive" },
-  { value: "reseaux", label: "Équipements réseau", icon: "wifi" },
-  { value: "logiciels", label: "Logiciels", icon: "code" },
+  { value: "memoire", label: "Mémoire RAM", icon: "memory-stick" },
+  { value: "imprimantes", label: "Imprimantes", icon: "printer" },
+  { value: "cartes_mere", label: "Cartes mère", icon: "circuit-board" },
+  { value: "cartes_graphiques", label: "Cartes graphiques", icon: "gpu" },
+  { value: "adaptateurs", label: "Adaptateurs", icon: "plug" },
+  { value: "coques", label: "Coques de protection", icon: "shield" },
   { value: "audio", label: "Audio", icon: "speaker" },
-  { value: "batteries", label: "Batteries & Chargeurs", icon: "battery-charging" },
-  { value: "objets_connectes", label: "Objets connectés", icon: "bluetooth" },
-  { value: "securite", label: "Sécurité", icon: "shield" },
+  { value: "periph_externes", label: "Périphériques", icon: "mouse" },
+  { value: "logiciels", label: "Logiciels", icon: "code" },
   { value: "autres", label: "Autres", icon: "more-horizontal" },
 ];
 
