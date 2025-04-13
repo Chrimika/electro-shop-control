@@ -10,7 +10,22 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { db, collection, addDoc, serverTimestamp, storage, ref, uploadBytes, getDownloadURL, query, where, getDocs } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, ImagePlus } from 'lucide-react';
+import { Loader2, ImagePlus, Tag } from 'lucide-react';
+import { 
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ProductFormValues {
   name: string;
@@ -21,6 +36,26 @@ interface ProductFormValues {
   sellingPrice: number;
 }
 
+// Liste des catégories prédéfinies pertinentes pour l'application
+const PRODUCT_CATEGORIES = [
+  { value: "smartphones", label: "Smartphones", icon: "smartphone" },
+  { value: "ordinateurs", label: "Ordinateurs", icon: "laptop" },
+  { value: "tablettes", label: "Tablettes", icon: "tablet" },
+  { value: "accessoires", label: "Accessoires", icon: "headphones" },
+  { value: "pieces_detachees", label: "Pièces détachées", icon: "cpu" },
+  { value: "ecrans", label: "Écrans", icon: "monitor" },
+  { value: "cables", label: "Câbles & Connecteurs", icon: "cable" },
+  { value: "peripheriques", label: "Périphériques", icon: "mouse" },
+  { value: "stockage", label: "Stockage", icon: "hard-drive" },
+  { value: "reseaux", label: "Équipements réseau", icon: "wifi" },
+  { value: "logiciels", label: "Logiciels", icon: "code" },
+  { value: "audio", label: "Audio", icon: "speaker" },
+  { value: "batteries", label: "Batteries & Chargeurs", icon: "battery-charging" },
+  { value: "objets_connectes", label: "Objets connectés", icon: "bluetooth" },
+  { value: "securite", label: "Sécurité", icon: "shield" },
+  { value: "autres", label: "Autres", icon: "more-horizontal" },
+];
+
 const NewProductForm = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
@@ -29,8 +64,10 @@ const NewProductForm = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [userStores, setUserStores] = useState<Array<{id: string, name: string}>>([]);
   const [selectedStoreId, setSelectedStoreId] = useState<string>('');
+  const [openCategoryPopover, setOpenCategoryPopover] = useState(false);
+  const [customCategory, setCustomCategory] = useState('');
   
-  const { register, handleSubmit, formState: { errors } } = useForm<ProductFormValues>({
+  const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<ProductFormValues>({
     defaultValues: {
       name: '',
       category: '',
@@ -41,6 +78,8 @@ const NewProductForm = () => {
     }
   });
   
+  const selectedCategory = watch('category');
+
   // Charger les magasins de l'utilisateur
   useEffect(() => {
     const fetchUserStores = async () => {
@@ -87,6 +126,23 @@ const NewProductForm = () => {
   const handleRemoveImage = () => {
     setImageFile(null);
     setImagePreview(null);
+  };
+  
+  const handleCategorySelection = (category: string) => {
+    setValue('category', category);
+    setOpenCategoryPopover(false);
+  };
+  
+  const handleCustomCategoryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCustomCategory(e.target.value);
+  };
+  
+  const addCustomCategory = () => {
+    if (customCategory.trim()) {
+      setValue('category', customCategory.trim());
+      setCustomCategory('');
+      setOpenCategoryPopover(false);
+    }
   };
   
   const onSubmit = async (data: ProductFormValues) => {
@@ -154,12 +210,80 @@ const NewProductForm = () => {
             
             <div className="space-y-2">
               <Label htmlFor="category">Catégorie*</Label>
-              <Input
-                id="category"
-                {...register('category', { required: 'La catégorie est requise' })}
-                placeholder="Catégorie du produit"
-                className={errors.category ? 'border-red-500' : ''}
-              />
+              <Popover open={openCategoryPopover} onOpenChange={setOpenCategoryPopover}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openCategoryPopover}
+                    className="w-full justify-between"
+                  >
+                    {selectedCategory ? 
+                      PRODUCT_CATEGORIES.find((category) => category.value === selectedCategory)?.label || selectedCategory
+                      : "Sélectionner une catégorie"}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Rechercher une catégorie..." />
+                    <CommandList>
+                      <CommandEmpty>
+                        <div className="p-2">
+                          <p>Aucune catégorie trouvée.</p>
+                          <div className="flex mt-2">
+                            <Input
+                              placeholder="Ajouter une catégorie"
+                              value={customCategory}
+                              onChange={handleCustomCategoryChange}
+                              className="flex-1 mr-2"
+                            />
+                            <Button size="sm" onClick={addCustomCategory}>
+                              Ajouter
+                            </Button>
+                          </div>
+                        </div>
+                      </CommandEmpty>
+                      <CommandGroup>
+                        {PRODUCT_CATEGORIES.map((category) => (
+                          <CommandItem
+                            key={category.value}
+                            onSelect={() => handleCategorySelection(category.value)}
+                            className="cursor-pointer"
+                          >
+                            <div className="flex items-center">
+                              <Tag className="mr-2 h-4 w-4" />
+                              {category.label}
+                            </div>
+                            <Check
+                              className={cn(
+                                "ml-auto h-4 w-4",
+                                selectedCategory === category.value ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                          </CommandItem>
+                        ))}
+                        
+                        <div className="border-t mx-2 my-1"></div>
+                        
+                        <div className="p-2">
+                          <div className="flex">
+                            <Input
+                              placeholder="Autre catégorie..."
+                              value={customCategory}
+                              onChange={handleCustomCategoryChange}
+                              className="flex-1 mr-2"
+                            />
+                            <Button size="sm" onClick={addCustomCategory}>
+                              Ajouter
+                            </Button>
+                          </div>
+                        </div>
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
               {errors.category && <p className="text-red-500 text-sm">{errors.category.message}</p>}
             </div>
           </div>
