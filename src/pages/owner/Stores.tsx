@@ -10,9 +10,9 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
 import OwnerHeader from '@/components/owner/OwnerHeader';
-import { db, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp } from '../../lib/firebase';
-import { useAuth } from '../../contexts/AuthContext';
-import { Store as StoreType } from '../../types';
+import { db, collection, doc, addDoc, updateDoc, deleteDoc, query, where, onSnapshot, serverTimestamp } from '@/lib/firebase';
+import { useAuth } from '@/contexts/AuthContext';
+import { Store as StoreType } from '@/types';
 
 const StoresPage = () => {
   const { currentUser } = useAuth();
@@ -33,7 +33,13 @@ const StoresPage = () => {
   useEffect(() => {
     if (!currentUser) return;
     
-    const unsubscribe = onSnapshot(collection(db, 'stores'), (snapshot) => {
+    // Modifié pour ne récupérer que les magasins appartenant à l'utilisateur connecté
+    const storesQuery = query(
+      collection(db, 'stores'),
+      where('ownerId', '==', currentUser.id)
+    );
+    
+    const unsubscribe = onSnapshot(storesQuery, (snapshot) => {
       const storesData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()

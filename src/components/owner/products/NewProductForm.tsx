@@ -1,237 +1,239 @@
 
 import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Card, 
-  CardContent, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { db, collection, addDoc, serverTimestamp } from '@/lib/firebase';
+import { db, collection, addDoc, serverTimestamp, storage, ref, uploadBytes, getDownloadURL } from '@/lib/firebase';
+import { useAuth } from '@/contexts/AuthContext';
+import { Loader2, ImagePlus } from 'lucide-react';
+
+interface ProductFormValues {
+  name: string;
+  category: string;
+  description: string;
+  supplier: string;
+  purchasePrice: number;
+  sellingPrice: number;
+}
 
 const NewProductForm = () => {
   const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [product, setProduct] = useState({
-    name: '',
-    description: '',
-    category: '',
-    supplier: '',
-    purchasePrice: '', // Prix d'achat (fournisseur)
-    sellingPrice: '',  // Prix de vente
+  const { currentUser } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  
+  const { register, handleSubmit, formState: { errors } } = useForm<ProductFormValues>({
+    defaultValues: {
+      name: '',
+      category: '',
+      description: '',
+      supplier: '',
+      purchasePrice: 0,
+      sellingPrice: 0
+    }
   });
-
-  // Catégories prédéfinies
-  const categories = [
-    'Téléphones', 
-    'Accessoires', 
-    'Ordinateurs', 
-    'Périphériques', 
-    'Pièces détachées', 
-    'Autre'
-  ];
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setProduct(prev => ({ ...prev, [name]: value }));
+  
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
-
-  const handleSelectChange = (name: string, value: string) => {
-    setProduct(prev => ({ ...prev, [name]: value }));
+  
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
   };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  
+  const onSubmit = async (data: ProductFormValues) => {
+    if (!currentUser) {
+      toast.error('Vous devez être connecté pour créer un produit');
+      return;
+    }
     
-    // Validation
-    if (!product.name.trim()) {
-      toast.error('Le nom du produit est requis');
-      return;
-    }
-
-    if (!product.category) {
-      toast.error('La catégorie est requise');
-      return;
-    }
-
-    if (!product.purchasePrice || isNaN(Number(product.purchasePrice)) || Number(product.purchasePrice) < 0) {
-      toast.error('Veuillez entrer un prix d\'achat valide');
-      return;
-    }
-
-    if (!product.sellingPrice || isNaN(Number(product.sellingPrice)) || Number(product.sellingPrice) <= 0) {
-      toast.error('Veuillez entrer un prix de vente valide');
-      return;
-    }
-
-    if (Number(product.sellingPrice) < Number(product.purchasePrice)) {
-      toast.warning('Attention: le prix de vente est inférieur au prix d\'achat');
-      // Continuer malgré l'avertissement
-    }
-
     try {
-      setIsSubmitting(true);
+      setLoading(true);
       
-      await addDoc(collection(db, 'products'), {
-        name: product.name,
-        description: product.description,
-        category: product.category,
-        supplier: product.supplier,
-        purchasePrice: Number(product.purchasePrice),
-        sellingPrice: Number(product.sellingPrice),
-        createdAt: serverTimestamp()
-      });
+      let imageUrl = '';
       
+      // Upload de l'image si présente
+      if (imageFile) {
+        const storageRef = ref(storage, `products/${Date.now()}_${imageFile.name}`);
+        const uploadResult = await uploadBytes(storageRef, imageFile);
+        imageUrl = await getDownloadURL(uploadResult.ref);
+      }
+      
+      const productData = {
+        name: data.name,
+        category: data.category,
+        description: data.description,
+        supplier: data.supplier,
+        purchasePrice: Number(data.purchasePrice),
+        sellingPrice: Number(data.sellingPrice),
+        imageUrl: imageUrl || null,
+        createdAt: serverTimestamp(),
+        ownerId: currentUser.id,
+        storeId: currentUser.storeId
+      };
+      
+      await addDoc(collection(db, 'products'), productData);
       toast.success('Produit créé avec succès');
-      navigate('/products');
+      navigate('/owner/products');
     } catch (error) {
-      console.error('Erreur lors de la création du produit:', error);
+      console.error('Error creating product:', error);
       toast.error('Erreur lors de la création du produit');
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <Card>
-        <CardHeader>
-          <CardTitle>Nouveau produit</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Nom du produit*</Label>
-            <Input
-              id="name"
-              name="name"
-              value={product.name}
-              onChange={handleChange}
-              placeholder="Nom du produit"
-              required
-            />
+    <Card>
+      <CardContent className="pt-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Nom du produit*</Label>
+              <Input
+                id="name"
+                {...register('name', { required: 'Le nom est requis' })}
+                placeholder="Nom du produit"
+                className={errors.name ? 'border-red-500' : ''}
+              />
+              {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="category">Catégorie*</Label>
+              <Input
+                id="category"
+                {...register('category', { required: 'La catégorie est requise' })}
+                placeholder="Catégorie du produit"
+                className={errors.category ? 'border-red-500' : ''}
+              />
+              {errors.category && <p className="text-red-500 text-sm">{errors.category.message}</p>}
+            </div>
           </div>
-
+          
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
-              name="description"
-              value={product.description}
-              onChange={handleChange}
+              {...register('description')}
               placeholder="Description du produit"
-              className="min-h-[100px]"
+              rows={4}
             />
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="category">Catégorie*</Label>
-            <Select 
-              value={product.category} 
-              onValueChange={(value) => handleSelectChange('category', value)}
-            >
-              <SelectTrigger id="category">
-                <SelectValue placeholder="Sélectionner une catégorie" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map(category => (
-                  <SelectItem key={category} value={category}>{category}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="supplier">Fournisseur</Label>
-            <Input
-              id="supplier"
-              name="supplier"
-              value={product.supplier}
-              onChange={handleChange}
-              placeholder="Nom du fournisseur"
-            />
-          </div>
-
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="purchasePrice">
-                Prix d'achat (fournisseur)*
-                <span className="text-xs text-gray-500 ml-1">(visible uniquement par le propriétaire)</span>
-              </Label>
-              <div className="relative">
-                <Input
-                  id="purchasePrice"
-                  name="purchasePrice"
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={product.purchasePrice}
-                  onChange={handleChange}
-                  placeholder="0"
-                  className="pr-16"
-                  required
-                />
-                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">FCFA</span>
-              </div>
+              <Label htmlFor="supplier">Fournisseur*</Label>
+              <Input
+                id="supplier"
+                {...register('supplier', { required: 'Le fournisseur est requis' })}
+                placeholder="Nom du fournisseur"
+                className={errors.supplier ? 'border-red-500' : ''}
+              />
+              {errors.supplier && <p className="text-red-500 text-sm">{errors.supplier.message}</p>}
             </div>
-
+            
             <div className="space-y-2">
-              <Label htmlFor="sellingPrice">
-                Prix de vente*
-                <span className="text-xs text-gray-500 ml-1">(visible par tous)</span>
-              </Label>
-              <div className="relative">
-                <Input
-                  id="sellingPrice"
-                  name="sellingPrice"
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={product.sellingPrice}
-                  onChange={handleChange}
-                  placeholder="0"
-                  className="pr-16"
-                  required
-                />
-                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">FCFA</span>
+              <Label htmlFor="purchasePrice">Prix d'achat (FCFA)*</Label>
+              <Input
+                id="purchasePrice"
+                type="number"
+                {...register('purchasePrice', { 
+                  required: 'Le prix d\'achat est requis',
+                  min: { value: 0, message: 'Le prix ne peut pas être négatif' }
+                })}
+                placeholder="0"
+                className={errors.purchasePrice ? 'border-red-500' : ''}
+              />
+              {errors.purchasePrice && <p className="text-red-500 text-sm">{errors.purchasePrice.message}</p>}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="sellingPrice">Prix de vente (FCFA)*</Label>
+              <Input
+                id="sellingPrice"
+                type="number"
+                {...register('sellingPrice', { 
+                  required: 'Le prix de vente est requis',
+                  min: { value: 0, message: 'Le prix ne peut pas être négatif' }
+                })}
+                placeholder="0"
+                className={errors.sellingPrice ? 'border-red-500' : ''}
+              />
+              {errors.sellingPrice && <p className="text-red-500 text-sm">{errors.sellingPrice.message}</p>}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="image">Image du produit (optionnelle)</Label>
+              <div className="mt-1 flex items-center">
+                {imagePreview ? (
+                  <div className="relative">
+                    <img 
+                      src={imagePreview} 
+                      alt="Aperçu de l'image" 
+                      className="w-32 h-32 object-cover rounded-md"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                      onClick={handleRemoveImage}
+                    >
+                      ✕
+                    </Button>
+                  </div>
+                ) : (
+                  <label htmlFor="image-upload" className="cursor-pointer">
+                    <div className="h-32 w-32 border-2 border-dashed border-gray-300 rounded-md flex flex-col items-center justify-center text-gray-400 hover:border-gray-400 transition-colors">
+                      <ImagePlus className="h-8 w-8 mb-1" />
+                      <span className="text-xs">Ajouter une image</span>
+                    </div>
+                    <input
+                      id="image-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                    />
+                  </label>
+                )}
               </div>
             </div>
           </div>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={() => navigate('/products')}
-          >
-            Annuler
-          </Button>
-          <Button 
-            type="submit"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <>
-                <span className="animate-spin h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full" />
-                Création...
-              </>
-            ) : 'Créer le produit'}
-          </Button>
-        </CardFooter>
-      </Card>
-    </form>
+          
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate('/owner/products')}
+              disabled={loading}
+            >
+              Annuler
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Créer le produit
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 };
 

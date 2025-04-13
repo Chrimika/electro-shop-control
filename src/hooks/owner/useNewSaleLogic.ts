@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   db, 
   collection, 
@@ -12,8 +13,8 @@ import {
   updateDoc, 
   serverTimestamp, 
   Timestamp 
-} from '../../lib/firebase';
-import { Product, Customer, SaleItem, SaleType } from '../../types';
+} from '@/lib/firebase';
+import { Product, Customer, SaleItem, SaleType } from '@/types';
 import { toast } from 'sonner';
 
 export function useNewSaleLogic() {
@@ -98,7 +99,7 @@ export function useNewSaleLogic() {
   }, [customerSearchQuery, customers]);
   
   useEffect(() => {
-    const newTotal = cart.reduce((sum, item) => sum + item.totalPrice, 0);
+    const newTotal = calculateTotal(cart);
     setTotal(newTotal);
     if (saleType === 'direct') {
       setPaidAmount(newTotal);
@@ -183,16 +184,6 @@ export function useNewSaleLogic() {
       };
       setCart([...cart, newItem]);
     }
-    
-    calculateTotal([...cart, { 
-      productId: product.id,
-      productName: product.name,
-      quantity: existingItemIndex >= 0 ? cart[existingItemIndex].quantity + 1 : 1,
-      unitPrice: product.sellingPrice,
-      totalPrice: existingItemIndex >= 0 
-        ? (cart[existingItemIndex].quantity + 1) * product.sellingPrice 
-        : product.sellingPrice
-    }]);
     
     toast.success(`${product.name} ajouté au panier`);
   };

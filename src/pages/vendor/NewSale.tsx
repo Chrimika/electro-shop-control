@@ -26,6 +26,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from '@/components/ui/dialog';
 import { 
   Table, 
@@ -37,9 +38,9 @@ import {
 } from '@/components/ui/table';
 import { ChevronLeft, Plus, Search, ShoppingBag, Trash2, User } from 'lucide-react';
 import VendorHeader from '@/components/vendor/VendorHeader';
-import { useAuth } from '../../contexts/AuthContext';
-import { db, collection, query, where, getDocs, addDoc, serverTimestamp } from '../../lib/firebase';
-import { Product, Customer, SaleItem, SaleType } from '../../types';
+import { useAuth } from '@/contexts/AuthContext';
+import { db, collection, query, where, getDocs, addDoc, serverTimestamp } from '@/lib/firebase';
+import { Product, Customer, SaleItem, SaleType } from '@/types';
 import { toast } from 'sonner';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
@@ -58,6 +59,15 @@ const NewSale = () => {
   const [quantity, setQuantity] = useState(1);
   const [deadline, setDeadline] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  
+  // Nouveau client
+  const [newCustomer, setNewCustomer] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    isBadged: false
+  });
+  const [isNewCustomerDialogOpen, setIsNewCustomerDialogOpen] = useState(false);
   
   useEffect(() => {
     const fetchData = async () => {
@@ -155,6 +165,47 @@ const NewSale = () => {
   
   const calculateTotal = () => {
     return cartItems.reduce((total, item) => total + item.totalPrice, 0);
+  };
+
+  const handleCreateNewCustomer = async () => {
+    // Validation de base
+    if (!newCustomer.name.trim() || !newCustomer.phone.trim()) {
+      toast.error('Le nom et le téléphone sont obligatoires');
+      return;
+    }
+
+    try {
+      // Ajout du storeId et de la date de création
+      const customerData = {
+        ...newCustomer,
+        storeId: currentUser?.storeId,
+        createdAt: serverTimestamp()
+      };
+
+      const docRef = await addDoc(collection(db, 'customers'), customerData);
+      const newCustomerWithId = {
+        id: docRef.id,
+        ...newCustomer
+      };
+
+      // Mise à jour de la liste des clients et sélection du nouveau client
+      setCustomers([...customers, newCustomerWithId]);
+      setSelectedCustomer(newCustomerWithId);
+      
+      // Réinitialisation du formulaire
+      setNewCustomer({
+        name: '',
+        phone: '',
+        email: '',
+        isBadged: false
+      });
+      
+      toast.success('Client créé avec succès');
+      setIsNewCustomerDialogOpen(false);
+    } catch (error) {
+      console.error('Erreur lors de la création du client:', error);
+      toast.error('Erreur lors de la création du client');
+    }
   };
   
   const handleCreateSale = async () => {
@@ -308,55 +359,126 @@ const NewSale = () => {
                     </Button>
                   </div>
                 ) : (
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" className="w-full">
-                        <User className="h-4 w-4 mr-2" /> Sélectionner un client
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-lg">
-                      <DialogHeader>
-                        <DialogTitle>Sélectionner un client</DialogTitle>
-                        <DialogDescription>
-                          Recherchez et sélectionnez un client pour cette vente
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="relative mb-4">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                        <Input
-                          placeholder="Rechercher un client..."
-                          className="pl-8"
-                          value={customerSearch}
-                          onChange={(e) => setCustomerSearch(e.target.value)}
-                        />
-                      </div>
-                      <div className="max-h-64 overflow-y-auto">
-                        {filteredCustomers.length === 0 ? (
-                          <p className="text-center py-4">Aucun client trouvé</p>
-                        ) : (
-                          <div className="space-y-2">
-                            {filteredCustomers.map((customer) => (
-                              <div
-                                key={customer.id}
-                                className="p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
-                                onClick={() => {
-                                  handleSelectCustomer(customer);
-                                  document.querySelector('[data-state="open"]')?.setAttribute('data-state', 'closed');
-                                }}
-                              >
-                                <p className="font-medium">{customer.name}</p>
-                                <p className="text-sm text-gray-600">{customer.phone}</p>
-                              </div>
-                            ))}
+                  <div className="flex flex-col gap-2">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" className="w-full">
+                          <User className="h-4 w-4 mr-2" /> Sélectionner un client
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-lg">
+                        <DialogHeader>
+                          <DialogTitle>Sélectionner un client</DialogTitle>
+                          <DialogDescription>
+                            Recherchez et sélectionnez un client pour cette vente
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="relative mb-4">
+                          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                          <Input
+                            placeholder="Rechercher un client..."
+                            className="pl-8"
+                            value={customerSearch}
+                            onChange={(e) => setCustomerSearch(e.target.value)}
+                          />
+                        </div>
+                        <div className="max-h-64 overflow-y-auto">
+                          {filteredCustomers.length === 0 ? (
+                            <p className="text-center py-4">Aucun client trouvé</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {filteredCustomers.map((customer) => (
+                                <div
+                                  key={customer.id}
+                                  className="p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+                                  onClick={() => {
+                                    handleSelectCustomer(customer);
+                                    document.querySelector('[data-state="open"]')?.setAttribute('data-state', 'closed');
+                                  }}
+                                >
+                                  <p className="font-medium">{customer.name}</p>
+                                  <p className="text-sm text-gray-600">{customer.phone}</p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <DialogFooter>
+                          <Button variant="outline">Annuler</Button>
+                          <DialogClose asChild>
+                            <Button>Fermer</Button>
+                          </DialogClose>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+
+                    {/* Nouveau dialogue pour créer un client */}
+                    <Dialog open={isNewCustomerDialogOpen} onOpenChange={setIsNewCustomerDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button className="w-full">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Nouveau client
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Créer un nouveau client</DialogTitle>
+                          <DialogDescription>
+                            Ajoutez les informations du nouveau client
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-2">
+                          <div>
+                            <Label htmlFor="customerName">Nom*</Label>
+                            <Input
+                              id="customerName"
+                              value={newCustomer.name}
+                              onChange={(e) => setNewCustomer({...newCustomer, name: e.target.value})}
+                              placeholder="Nom du client"
+                              className="mt-1"
+                            />
                           </div>
-                        )}
-                      </div>
-                      <DialogFooter>
-                        <Button variant="outline">Annuler</Button>
-                        <Button>Créer un nouveau client</Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+                          <div>
+                            <Label htmlFor="customerPhone">Téléphone*</Label>
+                            <Input
+                              id="customerPhone"
+                              value={newCustomer.phone}
+                              onChange={(e) => setNewCustomer({...newCustomer, phone: e.target.value})}
+                              placeholder="Numéro de téléphone"
+                              className="mt-1"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="customerEmail">Email</Label>
+                            <Input
+                              id="customerEmail"
+                              value={newCustomer.email}
+                              onChange={(e) => setNewCustomer({...newCustomer, email: e.target.value})}
+                              placeholder="Email (optionnel)"
+                              className="mt-1"
+                            />
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id="isBadged"
+                              checked={newCustomer.isBadged}
+                              onChange={(e) => setNewCustomer({...newCustomer, isBadged: e.target.checked})}
+                            />
+                            <Label htmlFor="isBadged">Client privilégié</Label>
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button variant="outline" onClick={() => setIsNewCustomerDialogOpen(false)}>
+                            Annuler
+                          </Button>
+                          <Button onClick={handleCreateNewCustomer}>
+                            Créer le client
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
                 )}
                 
                 {/* Sale type selection */}
@@ -456,11 +578,11 @@ const NewSale = () => {
                         <div>
                           <p className="font-medium">{item.productName}</p>
                           <div className="text-sm text-gray-600">
-                            {item.quantity} x {item.unitPrice} €
+                            {item.quantity} x {item.unitPrice} FCFA
                           </div>
                         </div>
                         <div className="flex items-center">
-                          <span className="font-bold mr-4">{item.totalPrice} €</span>
+                          <span className="font-bold mr-4">{item.totalPrice} FCFA</span>
                           <Button 
                             variant="ghost" 
                             size="icon"
@@ -476,18 +598,18 @@ const NewSale = () => {
                     
                     <div className="flex justify-between font-bold text-lg">
                       <span>Total:</span>
-                      <span>{calculateTotal()} €</span>
+                      <span>{calculateTotal()} FCFA</span>
                     </div>
                     
                     {saleType === 'partialPaid' && (
                       <div className="space-y-1 text-sm">
                         <div className="flex justify-between">
                           <span>Montant payé (80%):</span>
-                          <span>{(calculateTotal() * 0.8).toFixed(2)} €</span>
+                          <span>{(calculateTotal() * 0.8).toFixed(2)} FCFA</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Restant à payer:</span>
-                          <span>{(calculateTotal() * 0.2).toFixed(2)} €</span>
+                          <span>{(calculateTotal() * 0.2).toFixed(2)} FCFA</span>
                         </div>
                       </div>
                     )}
