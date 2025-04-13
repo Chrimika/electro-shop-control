@@ -18,7 +18,7 @@ const OwnerNewProduct = () => {
           <Button 
             variant="outline" 
             className="mr-3" 
-            onClick={() => navigate('/products')}
+            onClick={() => navigate('/owner/products')}
           >
             <ChevronLeft className="h-4 w-4 mr-1" /> Retour
           </Button>

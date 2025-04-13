@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { db, collection, addDoc, serverTimestamp, storage, ref, uploadBytes, getDownloadURL } from '@/lib/firebase';
+import { db, collection, addDoc, serverTimestamp, storage, ref, uploadBytes, getDownloadURL, query, where, getDocs } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, ImagePlus } from 'lucide-react';
 
@@ -27,6 +27,8 @@ const NewProductForm = () => {
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [userStores, setUserStores] = useState<Array<{id: string, name: string}>>([]);
+  const [selectedStoreId, setSelectedStoreId] = useState<string>('');
   
   const { register, handleSubmit, formState: { errors } } = useForm<ProductFormValues>({
     defaultValues: {
@@ -38,6 +40,37 @@ const NewProductForm = () => {
       sellingPrice: 0
     }
   });
+  
+  // Charger les magasins de l'utilisateur
+  useEffect(() => {
+    const fetchUserStores = async () => {
+      if (!currentUser) return;
+      
+      try {
+        const storesQuery = query(
+          collection(db, 'stores'),
+          where('ownerId', '==', currentUser.id)
+        );
+        
+        const storesSnapshot = await getDocs(storesQuery);
+        const stores = storesSnapshot.docs.map(doc => ({
+          id: doc.id,
+          name: doc.data().name
+        }));
+        
+        setUserStores(stores);
+        
+        // Sélectionner automatiquement le premier magasin si disponible
+        if (stores.length > 0) {
+          setSelectedStoreId(stores[0].id);
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des magasins:', error);
+      }
+    };
+    
+    fetchUserStores();
+  }, [currentUser]);
   
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -59,6 +92,11 @@ const NewProductForm = () => {
   const onSubmit = async (data: ProductFormValues) => {
     if (!currentUser) {
       toast.error('Vous devez être connecté pour créer un produit');
+      return;
+    }
+    
+    if (!selectedStoreId) {
+      toast.error('Veuillez sélectionner un magasin');
       return;
     }
     
@@ -84,7 +122,7 @@ const NewProductForm = () => {
         imageUrl: imageUrl || null,
         createdAt: serverTimestamp(),
         ownerId: currentUser.id,
-        storeId: currentUser.storeId
+        storeId: selectedStoreId
       };
       
       await addDoc(collection(db, 'products'), productData);
@@ -124,6 +162,29 @@ const NewProductForm = () => {
               />
               {errors.category && <p className="text-red-500 text-sm">{errors.category.message}</p>}
             </div>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="store">Magasin*</Label>
+            <select
+              id="store"
+              className="w-full rounded-md border border-input bg-background px-3 py-2"
+              value={selectedStoreId}
+              onChange={(e) => setSelectedStoreId(e.target.value)}
+              required
+            >
+              <option value="">Sélectionner un magasin</option>
+              {userStores.map((store) => (
+                <option key={store.id} value={store.id}>
+                  {store.name}
+                </option>
+              ))}
+            </select>
+            {userStores.length === 0 && (
+              <p className="text-yellow-500 text-sm">
+                Aucun magasin disponible. Veuillez d'abord créer un magasin.
+              </p>
+            )}
           </div>
           
           <div className="space-y-2">
@@ -226,7 +287,7 @@ const NewProductForm = () => {
             >
               Annuler
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || userStores.length === 0}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Créer le produit
             </Button>
