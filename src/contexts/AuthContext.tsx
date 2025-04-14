@@ -1,15 +1,20 @@
 
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { auth, db, doc, getDoc } from '../lib/firebase';
+import { auth, db, doc, getDoc, signOut } from '../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { User as UserType } from '../types';
 
 interface AuthContextType {
   currentUser: UserType | null;
   loading: boolean;
+  logout: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>({ currentUser: null, loading: true });
+const AuthContext = createContext<AuthContextType>({ 
+  currentUser: null, 
+  loading: true,
+  logout: async () => {} 
+});
 
 export const useAuth = () => useContext(AuthContext);
 
@@ -44,7 +49,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return unsubscribe;
   }, []);
 
-  const value = { currentUser, loading };
+  // Add logout function
+  const logout = async () => {
+    try {
+      await signOut(auth);
+      // No need to set currentUser to null here as the auth state change will trigger that
+    } catch (error) {
+      console.error("Failed to logout", error);
+      throw error;
+    }
+  };
+
+  const value = { currentUser, loading, logout };
 
   return (
     <AuthContext.Provider value={value}>

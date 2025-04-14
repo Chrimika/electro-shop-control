@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -74,6 +73,15 @@ const OwnerHeader = () => {
   
   const isActive = (path: string) => {
     return location.pathname === path || location.pathname.startsWith(path + '/');
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      // Navigation will be handled by the auth state change if needed
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   return (
@@ -187,11 +195,8 @@ const OwnerHeader = () => {
               <DropdownMenuItem asChild>
                 <Link to="/owner/settings/profile">Profil</Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/owner/settings">Paramètres</Link>
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout}>
+              <DropdownMenuItem onClick={handleLogout}>
                 Se déconnecter
               </DropdownMenuItem>
             </DropdownMenuContent>
