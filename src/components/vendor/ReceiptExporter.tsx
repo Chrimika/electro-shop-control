@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Printer, FileText, FilePdf } from 'lucide-react';
+import { Printer, FileText, FileIcon } from 'lucide-react';
 import { Sale } from '@/types';
 import { toast } from 'sonner';
 
@@ -89,7 +89,7 @@ const ReceiptExporter: React.FC<ReceiptExporterProps> = ({ sale, vendorName, sto
         variant="outline"
         className="flex items-center justify-center"
       >
-        <FilePdf className="h-4 w-4 mr-2" />
+        <FileIcon className="h-4 w-4 mr-2" />
         Exporter en PDF
       </Button>
       

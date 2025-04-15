@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -63,6 +64,7 @@ const NewSale = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [vendorName, setVendorName] = useState('');
   const [storeName, setStoreName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [newCustomer, setNewCustomer] = useState({
     name: '',
@@ -245,6 +247,8 @@ const NewSale = () => {
     }
     
     try {
+      setIsSubmitting(true);
+      
       if (!currentUser?.storeId) {
         toast.error('Erreur d\'identification du magasin');
         return;
@@ -304,7 +308,9 @@ const NewSale = () => {
     customer: selectedCustomer ? {
       id: selectedCustomer.id,
       name: selectedCustomer.name,
-      phone: selectedCustomer.phone
+      phone: selectedCustomer.phone,
+      email: selectedCustomer.email,
+      isBadged: selectedCustomer.isBadged
     } : null,
     items: cartItems,
     saleType: saleType,
