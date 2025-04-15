@@ -265,7 +265,9 @@ const NewSale = () => {
         customer: selectedCustomer ? {
           id: selectedCustomer.id,
           name: selectedCustomer.name,
-          phone: selectedCustomer.phone
+          phone: selectedCustomer.phone,
+          email: selectedCustomer.email,
+          isBadged: selectedCustomer.isBadged
         } : null,
         items: cartItems,
         saleType: saleType,
@@ -281,7 +283,9 @@ const NewSale = () => {
       navigate(`/vendor/sales/${docRef.id}`);
     } catch (err) {
       console.error('Erreur lors de la création de la vente:', err);
-      toast.error('Erreur lors de la création de la vente');
+      toast.error('Erreur lors de l\'enregistrement de la vente');
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
