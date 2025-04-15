@@ -35,14 +35,15 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { ChevronLeft, CircleDollarSign, Plus, Search, ShoppingBag, Trash2, User } from 'lucide-react';
+import { ChevronLeft, CircleDollarSign, Plus, Search, ShoppingBag, Trash2, User, Eye } from 'lucide-react';
 import VendorHeader from '@/components/vendor/VendorHeader';
 import { useAuth } from '@/contexts/AuthContext';
-import { db, collection, query, where, getDocs, addDoc, serverTimestamp } from '@/lib/firebase';
-import { Product, Customer, SaleItem, SaleType } from '@/types';
+import { db, collection, query, where, getDocs, addDoc, serverTimestamp, doc, getDoc } from '@/lib/firebase';
+import { Product, Customer, SaleItem, SaleType, Sale } from '@/types';
 import { toast } from 'sonner';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
+import SaleReceipt from '@/components/vendor/SaleReceipt';
 
 const NewSale = () => {
   const navigate = useNavigate();
@@ -59,6 +60,9 @@ const NewSale = () => {
   const [customPrice, setCustomPrice] = useState<number | undefined>(undefined);
   const [deadline, setDeadline] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [showPreview, setShowPreview] = useState(false);
+  const [vendorName, setVendorName] = useState('');
+  const [storeName, setStoreName] = useState('');
   
   const [newCustomer, setNewCustomer] = useState({
     name: '',
@@ -74,6 +78,18 @@ const NewSale = () => {
       
       try {
         setLoading(true);
+        
+        const storeDoc = await getDoc(doc(db, 'stores', currentUser.storeId));
+        if (storeDoc.exists()) {
+          setStoreName(storeDoc.data().name || 'Boutique');
+        }
+        
+        if (currentUser.id) {
+          const vendorDoc = await getDoc(doc(db, 'users', currentUser.id));
+          if (vendorDoc.exists()) {
+            setVendorName(vendorDoc.data().displayName || 'Vendeur');
+          }
+        }
         
         const productsQuery = query(
           collection(db, 'products'),
@@ -109,6 +125,13 @@ const NewSale = () => {
     };
     
     fetchData();
+    
+    const handleShowPreview = () => setShowPreview(true);
+    window.addEventListener('showReceiptPreview', handleShowPreview);
+    
+    return () => {
+      window.removeEventListener('showReceiptPreview', handleShowPreview);
+    };
   }, [currentUser]);
   
   const filteredProducts = productSearch
@@ -156,7 +179,12 @@ const NewSale = () => {
     setSelectedProduct(null);
     setQuantity(1);
     setCustomPrice(undefined);
-    toast.success('Produit ajouté au panier');
+    toast.success('Produit ajouté au panier', {
+      action: {
+        label: 'Voir le reçu',
+        onClick: () => setShowPreview(true)
+      }
+    });
   };
   
   const handleRemoveFromCart = (index: number) => {
@@ -264,22 +292,95 @@ const NewSale = () => {
   const handleSelectCustomer = (customer: Customer) => {
     setSelectedCustomer(customer);
   };
+  
+  const previewSale: Sale = {
+    id: 'preview',
+    storeId: currentUser?.storeId || '',
+    vendorId: currentUser?.id || '',
+    customer: selectedCustomer ? {
+      id: selectedCustomer.id,
+      name: selectedCustomer.name,
+      phone: selectedCustomer.phone
+    } : null,
+    items: cartItems,
+    saleType: saleType,
+    totalAmount: calculateTotal(),
+    paidAmount: saleType === 'direct' ? calculateTotal() : 
+              saleType === 'partialPaid' ? calculateTotal() * 0.8 : 0,
+    createdAt: new Date(),
+    deadline: deadline ? new Date(deadline) : undefined,
+    status: saleType === 'direct' ? 'completed' : 'pending'
+  };
+
+  if (showPreview && cartItems.length > 0) {
+    return (
+      <div className="min-h-screen bg-gray-100">
+        <VendorHeader />
+        <main className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-between mb-6">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowPreview(false)}
+            >
+              <ChevronLeft className="h-4 w-4 mr-2" /> Retour à la vente
+            </Button>
+            <h1 className="text-2xl font-bold">Aperçu du reçu</h1>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <SaleReceipt sale={previewSale} vendorName={vendorName} storeName={storeName} />
+          </div>
+          
+          <div className="flex justify-center mt-6">
+            <Button 
+              onClick={() => setShowPreview(false)}
+              className="mx-2"
+            >
+              Retour à la vente
+            </Button>
+            <Button 
+              onClick={() => {
+                window.print();
+              }}
+              variant="outline" 
+              className="mx-2"
+            >
+              Imprimer l'aperçu
+            </Button>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100">
       <VendorHeader />
       
       <main className="container mx-auto px-4 py-8">
-        <div className="flex items-center mb-6">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="mr-2" 
-            onClick={() => navigate('/vendor/dashboard')}
-          >
-            <ChevronLeft className="h-4 w-4 mr-1" /> Retour
-          </Button>
-          <h1 className="text-3xl font-bold">Nouvelle vente</h1>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mr-2" 
+              onClick={() => navigate('/vendor/dashboard')}
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" /> Retour
+            </Button>
+            <h1 className="text-3xl font-bold">Nouvelle vente</h1>
+          </div>
+          
+          {cartItems.length > 0 && (
+            <Button 
+              variant="outline"
+              onClick={() => setShowPreview(true)}
+              className="flex items-center"
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Aperçu du reçu
+            </Button>
+          )}
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

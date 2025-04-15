@@ -17,10 +17,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Search, Plus, Tag, CircleDollarSign } from 'lucide-react';
 import { Product } from '@/types';
+import { toast } from 'sonner';
 
 interface ProductSelectorProps {
   products: Product[];
@@ -52,6 +52,19 @@ const ProductSelector = ({
       setQuantity(1);
       setCustomPrice(undefined);
       setIsDialogOpen(false);
+      
+      // Show confirmation toast with preview link
+      toast.success('Produit ajouté au panier', {
+        description: 'Le produit a été ajouté au panier avec succès.',
+        action: {
+          label: 'Voir le reçu',
+          onClick: () => {
+            // This will trigger the preview view to be shown
+            const previewEvent = new CustomEvent('showReceiptPreview');
+            window.dispatchEvent(previewEvent);
+          }
+        }
+      });
     }
   };
 
