@@ -1,354 +1,225 @@
 
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { 
-  Bell, 
-  ChevronDown, 
-  LogOut, 
-  Menu, 
-  MessageSquare,
-  Settings, 
-  X,
-  Users
-} from 'lucide-react';
+import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { 
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNotifications } from '@/contexts/NotificationContext';
+import { Bell, Menu, X, Home, ShoppingBag, Smartphone, Users, FileBarChart, Settings, User } from 'lucide-react';
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
-import { useAuth } from '../../contexts/AuthContext';
-import { useNotifications } from '../../contexts/NotificationContext';
-import { auth, signOut, db, doc, getDoc } from '../../lib/firebase';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
-import { User } from '@/types';
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Badge } from '@/components/ui/badge';
 
 const VendorHeader = () => {
-  const { currentUser } = useAuth();
-  const { notifications, unreadCount, addNotification } = useNotifications();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [notificationTitle, setNotificationTitle] = useState('');
-  const [notificationMessage, setNotificationMessage] = useState('');
-  const [storeOwner, setStoreOwner] = useState<User | null>(null);
+  const { currentUser, logout } = useAuth();
+  const { unreadCount } = useNotifications();
+  const location = useLocation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // Récupérer l'ID du propriétaire du magasin
-  useEffect(() => {
-    const fetchStoreOwner = async () => {
-      if (currentUser?.storeId) {
-        try {
-          const storeRef = doc(db, 'stores', currentUser.storeId);
-          const storeDoc = await getDoc(storeRef);
-          
-          if (storeDoc.exists()) {
-            const storeData = storeDoc.data();
-            const ownerId = storeData.ownerId;
-            
-            if (ownerId) {
-              const ownerRef = doc(db, 'users', ownerId);
-              const ownerDoc = await getDoc(ownerRef);
-              
-              if (ownerDoc.exists()) {
-                setStoreOwner({
-                  id: ownerDoc.id,
-                  ...ownerDoc.data()
-                } as User);
-              }
-            }
-          }
-        } catch (error) {
-          console.error("Erreur lors de la récupération du propriétaire du magasin:", error);
-        }
-      }
-    };
-    
-    fetchStoreOwner();
-  }, [currentUser]);
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-    } catch (error) {
-      console.error('Erreur lors de la déconnexion:', error);
-    }
-  };
-
-  const getInitials = (name: string) => {
-    return name
+  const getInitials = () => {
+    if (!currentUser?.displayName) return 'V';
+    return currentUser.displayName
       .split(' ')
       .map(part => part[0])
       .join('')
       .toUpperCase();
   };
-
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
+  
+  const isActive = (path: string) => {
+    return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
-  const handleSendNotification = async () => {
-    if (!notificationTitle.trim() || !notificationMessage.trim()) {
-      toast.error('Veuillez remplir tous les champs');
-      return;
-    }
-    
-    if (!storeOwner) {
-      toast.error('Impossible de trouver le propriétaire du magasin');
-      return;
-    }
-    
+  const handleLogout = async () => {
     try {
-      await addNotification({
-        title: notificationTitle,
-        message: notificationMessage,
-        type: 'system',
-        recipientId: storeOwner.id,
-        isRead: false
-      });
-      
-      toast.success('Notification envoyée au propriétaire');
-      setNotificationTitle('');
-      setNotificationMessage('');
+      await logout();
+      // Navigation will be handled by the auth state change
     } catch (error) {
-      console.error('Erreur lors de l\'envoi de la notification:', error);
-      toast.error('Erreur lors de l\'envoi de la notification');
+      console.error("Logout failed:", error);
     }
   };
 
-  if (!currentUser) return null;
+  const navItems = [
+    { path: '/vendor/dashboard', label: 'Tableau de bord', icon: Home },
+    { path: '/vendor/sales', label: 'Ventes', icon: ShoppingBag },
+    { path: '/vendor/repairs', label: 'Réparations', icon: Smartphone },
+    { path: '/vendor/customers', label: 'Clients', icon: Users },
+  ];
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo and main navigation */}
-          <div className="flex items-center">
-            <Link to="/vendor/dashboard" className="flex items-center">
-              <span className="text-xl font-bold text-blue-600 mr-10">ElectroShopControl</span>
-            </Link>
-            
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex space-x-8">
-              <Link to="/vendor/dashboard" className="text-gray-600 hover:text-blue-600">
-                Dashboard
-              </Link>
-              <Link to="/vendor/sales" className="text-gray-600 hover:text-blue-600">
-                Ventes
-              </Link>
-              <Link to="/vendor/customers" className="text-gray-600 hover:text-blue-600">
-                Clients
-              </Link>
-              <Link to="/vendor/repairs" className="text-gray-600 hover:text-blue-600">
-                Réparations
-              </Link>
-            </nav>
-          </div>
-          
-          {/* Right Side - User Menu & Notifications */}
-          <div className="flex items-center space-x-4">
-            {/* Notify Owner */}
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <MessageSquare className="h-5 w-5" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Notifier le propriétaire</DialogTitle>
-                  <DialogDescription>
-                    Envoyez un message au propriétaire concernant un problème ou une question
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="notification-title">Titre</Label>
-                    <Input 
-                      id="notification-title" 
-                      placeholder="Titre de la notification"
-                      value={notificationTitle}
-                      onChange={(e) => setNotificationTitle(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="notification-message">Message</Label>
-                    <Textarea 
-                      id="notification-message" 
-                      placeholder="Description détaillée du problème ou de la question..."
-                      rows={5}
-                      value={notificationMessage}
-                      onChange={(e) => setNotificationMessage(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button onClick={handleSendNotification}>Envoyer</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-            
-            {/* Notifications */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative">
-                  <Bell className="h-5 w-5" />
-                  {unreadCount > 0 && (
-                    <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                      {unreadCount}
-                    </span>
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80">
-                <div className="p-4 max-h-96 overflow-y-auto">
-                  <h3 className="font-semibold text-lg mb-4">Notifications</h3>
-                  {notifications.length === 0 ? (
-                    <p className="text-gray-500 text-center py-4">Aucune notification</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {notifications.slice(0, 5).map((notification) => (
-                        <div key={notification.id} className={`${notification.isRead ? 'bg-white' : 'bg-blue-50'} p-3 rounded-lg border`}>
-                          <h4 className="font-medium">{notification.title}</h4>
-                          <p className="text-sm text-gray-600">{notification.message}</p>
-                          <div className="text-xs text-gray-400 mt-1">
-                            {new Date(notification.createdAt).toLocaleString()}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                {notifications.length > 0 && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link to="/vendor/notifications" className="w-full text-center cursor-pointer">
-                        Voir toutes les notifications
-                      </Link>
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            
-            {/* User Menu */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="p-0">
-                  <div className="flex items-center gap-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback>{currentUser.displayName ? getInitials(currentUser.displayName) : 'V'}</AvatarFallback>
-                    </Avatar>
-                    <span className="hidden md:inline">{currentUser.displayName || 'Vendeur'}</span>
-                    <ChevronDown className="h-4 w-4 opacity-50" />
-                  </div>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                  <Link to="/vendor/profile" className="cursor-pointer">
-                    <Users className="mr-2 h-4 w-4" /> Profil
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/vendor/settings" className="cursor-pointer">
-                    <Settings className="mr-2 h-4 w-4" /> Paramètres
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
-                  <LogOut className="mr-2 h-4 w-4" /> Se déconnecter
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            
-            {/* Mobile menu button */}
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="md:hidden"
-              onClick={toggleMobileMenu}
+      <div className="container mx-auto px-4 flex items-center justify-between h-16">
+        {/* Logo and title */}
+        <div className="flex items-center">
+          <Link to="/vendor/dashboard" className="font-bold text-xl text-purple-600 flex items-center">
+            <span className="hidden sm:inline">ElectroShop Vendor</span>
+            <span className="sm:hidden">ESV</span>
+          </Link>
+        </div>
+        
+        {/* Desktop Navigation */}
+        <div className="hidden md:flex space-x-1">
+          {navItems.map((item) => (
+            <Button
+              key={item.path}
+              variant={isActive(item.path) ? 'secondary' : 'ghost'}
+              className={`flex items-center gap-2`}
+              asChild
             >
-              <Menu className="h-6 w-6" />
+              <Link to={item.path}>
+                <item.icon className="h-4 w-4" />
+                {item.label}
+              </Link>
             </Button>
-          </div>
+          ))}
+        </div>
+        
+        {/* New sale button (always visible) */}
+        <Button asChild className="hidden sm:flex" size="sm">
+          <Link to="/vendor/sales/new">
+            <ShoppingBag className="w-4 h-4 mr-2" />
+            Nouvelle vente
+          </Link>
+        </Button>
+
+        {/* Controls (notifications and profile) */}
+        <div className="flex items-center gap-2">
+          {/* Notifications */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="relative">
+                <Bell className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-1 text-[10px]">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </Badge>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-80">
+              <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <div className="max-h-[300px] overflow-auto">
+                <div className="py-6 text-center text-gray-500">
+                  <Bell className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                  <p>Vous n'avez pas de nouvelles notifications</p>
+                </div>
+              </div>
+              <DropdownMenuSeparator />
+              <div className="p-2">
+                <Button variant="ghost" size="sm" className="w-full" asChild>
+                  <Link to="/vendor/notifications">Voir toutes les notifications</Link>
+                </Button>
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          {/* User Profile */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback>{getInitials()}</AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>
+                <div>
+                  <p>{currentUser?.displayName}</p>
+                  <p className="text-xs text-gray-500">{currentUser?.email}</p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/vendor/profile">
+                  <User className="h-4 w-4 mr-2" />
+                  Mon profil
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/vendor/notifications">
+                  <Bell className="h-4 w-4 mr-2" />
+                  Notifications
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout}>
+                Se déconnecter
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          {/* Mobile menu */}
+          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+            <SheetTrigger asChild className="md:hidden">
+              <Button variant="ghost" size="icon">
+                <Menu className="h-6 w-6" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right">
+              <div className="flex flex-col h-full">
+                <div className="flex items-center justify-between py-4 border-b">
+                  <h2 className="font-bold text-lg">Menu</h2>
+                  <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(false)}>
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
+                
+                <div className="flex-grow py-4 overflow-auto">
+                  <div className="space-y-1">
+                    {navItems.map((item) => (
+                      <Button
+                        key={item.path}
+                        variant={isActive(item.path) ? 'secondary' : 'ghost'}
+                        className="w-full justify-start"
+                        asChild
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <Link to={item.path}>
+                          <item.icon className="h-5 w-5 mr-3" />
+                          {item.label}
+                        </Link>
+                      </Button>
+                    ))}
+                    
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start"
+                      asChild
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <Link to="/vendor/profile">
+                        <User className="h-5 w-5 mr-3" />
+                        Mon profil
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="border-t p-4">
+                  <Button className="w-full" asChild onClick={() => setIsMobileMenuOpen(false)}>
+                    <Link to="/vendor/sales/new">
+                      <ShoppingBag className="w-4 h-4 mr-2" />
+                      Nouvelle vente
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
-      
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden">
-          <div className="fixed inset-y-0 right-0 max-w-xs w-full bg-white shadow-lg p-6 overflow-y-auto">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-xl font-bold text-blue-600">Menu</h2>
-              <Button variant="ghost" size="icon" onClick={toggleMobileMenu}>
-                <X className="h-6 w-6" />
-              </Button>
-            </div>
-            
-            <nav className="flex flex-col space-y-6">
-              <Link 
-                to="/vendor/dashboard" 
-                className="text-gray-600 hover:text-blue-600 text-lg font-medium"
-                onClick={toggleMobileMenu}
-              >
-                Dashboard
-              </Link>
-              <Link 
-                to="/vendor/sales" 
-                className="text-gray-600 hover:text-blue-600 text-lg font-medium"
-                onClick={toggleMobileMenu}
-              >
-                Ventes
-              </Link>
-              <Link 
-                to="/vendor/customers" 
-                className="text-gray-600 hover:text-blue-600 text-lg font-medium"
-                onClick={toggleMobileMenu}
-              >
-                Clients
-              </Link>
-              <Link 
-                to="/vendor/repairs" 
-                className="text-gray-600 hover:text-blue-600 text-lg font-medium"
-                onClick={toggleMobileMenu}
-              >
-                Réparations
-              </Link>
-              <Link 
-                to="/vendor/profile" 
-                className="text-gray-600 hover:text-blue-600 text-lg font-medium"
-                onClick={toggleMobileMenu}
-              >
-                Profil
-              </Link>
-              <Link 
-                to="/vendor/settings" 
-                className="text-gray-600 hover:text-blue-600 text-lg font-medium"
-                onClick={toggleMobileMenu}
-              >
-                Paramètres
-              </Link>
-              
-              <Button 
-                variant="ghost" 
-                className="justify-start p-0 text-lg font-medium text-red-600 hover:text-red-800"
-                onClick={() => {
-                  handleLogout();
-                  toggleMobileMenu();
-                }}
-              >
-                <LogOut className="mr-2 h-5 w-5" /> Se déconnecter
-              </Button>
-            </nav>
-          </div>
-        </div>
-      )}
     </header>
   );
 };

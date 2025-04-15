@@ -1,0 +1,42 @@
+
+@media print {
+  /* Hide everything except the receipt when printing */
+  body * {
+    visibility: hidden;
+  }
+  
+  #printable-receipt,
+  #printable-receipt * {
+    visibility: visible;
+  }
+  
+  #printable-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 20px;
+    background-color: white;
+  }
+  
+  /* Format page for printing */
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+}
+
+/* Make the print view not visible in normal view */
+.print-only {
+  display: none;
+}
+
+@media print {
+  .print-only {
+    display: block;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
+}

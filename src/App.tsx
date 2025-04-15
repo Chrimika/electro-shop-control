@@ -32,6 +32,7 @@ import SaleDetail from "./pages/vendor/SaleDetail";
 import NewSale from "./pages/vendor/NewSale";
 import RepairsList from "./pages/vendor/RepairsList";
 import RepairDetail from "./pages/vendor/RepairDetail";
+import VendorProfile from "./pages/vendor/Profile"; // Nouvelle page profil vendor
 
 // Repairer Routes
 import RepairerDashboard from "./pages/repairer/Dashboard";
@@ -185,6 +186,11 @@ const App = () => (
               <Route path="/vendor/notifications" element={
                 <ProtectedRoute allowedRoles={['vendor']}>
                   <div>Page des notifications vendeur en construction</div>
+                </ProtectedRoute>
+              } />
+              <Route path="/vendor/profile" element={
+                <ProtectedRoute allowedRoles={['vendor']}>
+                  <VendorProfile />
                 </ProtectedRoute>
               } />
               
