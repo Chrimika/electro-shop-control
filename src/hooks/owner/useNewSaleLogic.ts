@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -157,20 +156,24 @@ export function useNewSaleLogic() {
     }
   }, [searchQuery, products]);
   
-  const handleAddToCart = (product: Product) => {
+  const handleAddToCart = (product: Product, quantity: number = 1, customPrice?: number) => {
     const existingItemIndex = cart.findIndex(item => item.productId === product.id);
+    const unitPrice = customPrice !== undefined ? customPrice : product.sellingPrice;
     
     if (existingItemIndex >= 0) {
       const updatedCart = [...cart];
       const item = updatedCart[existingItemIndex];
       
       const availableStock = storeInventory[product.id] || 0;
-      if (item.quantity >= availableStock) {
+      if (item.quantity + quantity > availableStock) {
         toast.error(`Stock insuffisant. Maximum disponible: ${availableStock}`);
         return;
       }
       
-      item.quantity += 1;
+      item.quantity += quantity;
+      if (customPrice !== undefined) {
+        item.unitPrice = unitPrice;
+      }
       item.totalPrice = item.quantity * item.unitPrice;
       updatedCart[existingItemIndex] = item;
       setCart(updatedCart);
@@ -178,14 +181,14 @@ export function useNewSaleLogic() {
       const newItem: SaleItem = {
         productId: product.id,
         productName: product.name,
-        quantity: 1,
-        unitPrice: product.sellingPrice,
-        totalPrice: product.sellingPrice
+        quantity: quantity,
+        unitPrice: unitPrice,
+        totalPrice: unitPrice * quantity
       };
       setCart([...cart, newItem]);
     }
     
-    toast.success(`${product.name} ajouté au panier`);
+    toast.success(`${quantity} ${product.name} ajouté${quantity > 1 ? 's' : ''} au panier`);
   };
   
   const handleRemoveFromCart = (productId: string) => {
@@ -223,11 +226,6 @@ export function useNewSaleLogic() {
     
     if (cart.length === 0) {
       toast.error('Veuillez ajouter des produits à la vente');
-      return;
-    }
-    
-    if (saleType !== 'direct' && !selectedCustomer) {
-      setShowCustomerWarning(true);
       return;
     }
     

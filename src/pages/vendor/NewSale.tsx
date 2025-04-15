@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -36,7 +35,7 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { ChevronLeft, Plus, Search, ShoppingBag, Trash2, User } from 'lucide-react';
+import { ChevronLeft, CircleDollarSign, Plus, Search, ShoppingBag, Trash2, User } from 'lucide-react';
 import VendorHeader from '@/components/vendor/VendorHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { db, collection, query, where, getDocs, addDoc, serverTimestamp } from '@/lib/firebase';
@@ -57,10 +56,10 @@ const NewSale = () => {
   const [customerSearch, setCustomerSearch] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [customPrice, setCustomPrice] = useState<number | undefined>(undefined);
   const [deadline, setDeadline] = useState<string>('');
   const [loading, setLoading] = useState(true);
   
-  // Nouveau client
   const [newCustomer, setNewCustomer] = useState({
     name: '',
     phone: '',
@@ -76,7 +75,6 @@ const NewSale = () => {
       try {
         setLoading(true);
         
-        // Fetch products
         const productsQuery = query(
           collection(db, 'products'),
           where('storeId', '==', currentUser.storeId)
@@ -90,7 +88,6 @@ const NewSale = () => {
         
         setProducts(productsData);
         
-        // Fetch customers
         const customersQuery = query(
           collection(db, 'customers'),
           where('storeId', '==', currentUser.storeId)
@@ -131,23 +128,26 @@ const NewSale = () => {
   const handleAddToCart = () => {
     if (!selectedProduct) return;
     
+    const unitPrice = customPrice !== undefined ? customPrice : selectedProduct.sellingPrice;
+    
     const existingItemIndex = cartItems.findIndex(item => item.productId === selectedProduct.id);
     
     if (existingItemIndex >= 0) {
-      // Update quantity of existing item
       const updatedItems = [...cartItems];
       updatedItems[existingItemIndex].quantity += quantity;
+      if (customPrice !== undefined) {
+        updatedItems[existingItemIndex].unitPrice = unitPrice;
+      }
       updatedItems[existingItemIndex].totalPrice = 
         updatedItems[existingItemIndex].quantity * updatedItems[existingItemIndex].unitPrice;
       setCartItems(updatedItems);
     } else {
-      // Add new item
       const newItem: SaleItem = {
         productId: selectedProduct.id,
         productName: selectedProduct.name,
         quantity: quantity,
-        unitPrice: selectedProduct.sellingPrice,
-        totalPrice: selectedProduct.sellingPrice * quantity
+        unitPrice: unitPrice,
+        totalPrice: unitPrice * quantity
       };
       
       setCartItems([...cartItems, newItem]);
@@ -155,6 +155,7 @@ const NewSale = () => {
     
     setSelectedProduct(null);
     setQuantity(1);
+    setCustomPrice(undefined);
     toast.success('Produit ajouté au panier');
   };
   
@@ -168,14 +169,12 @@ const NewSale = () => {
   };
 
   const handleCreateNewCustomer = async () => {
-    // Validation de base
     if (!newCustomer.name.trim() || !newCustomer.phone.trim()) {
       toast.error('Le nom et le téléphone sont obligatoires');
       return;
     }
 
     try {
-      // Ajout du storeId et de la date de création
       const customerData = {
         ...newCustomer,
         storeId: currentUser?.storeId,
@@ -188,11 +187,9 @@ const NewSale = () => {
         ...newCustomer
       };
 
-      // Mise à jour de la liste des clients et sélection du nouveau client
       setCustomers([...customers, newCustomerWithId]);
       setSelectedCustomer(newCustomerWithId);
       
-      // Réinitialisation du formulaire
       setNewCustomer({
         name: '',
         phone: '',
@@ -228,11 +225,10 @@ const NewSale = () => {
       const totalAmount = calculateTotal();
       let paidAmount = 0;
       
-      // For direct sales, the full amount is paid
       if (saleType === 'direct') {
         paidAmount = totalAmount;
       } else if (saleType === 'partialPaid') {
-        paidAmount = totalAmount * 0.8; // 80% paid
+        paidAmount = totalAmount * 0.8;
       }
       
       const saleData = {
@@ -287,7 +283,6 @@ const NewSale = () => {
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Products selection */}
           <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle>Sélection des produits</CardTitle>
@@ -331,9 +326,7 @@ const NewSale = () => {
             </CardContent>
           </Card>
           
-          {/* Cart summary */}
           <div className="space-y-6">
-            {/* Customer selection */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -412,7 +405,6 @@ const NewSale = () => {
                       </DialogContent>
                     </Dialog>
 
-                    {/* Nouveau dialogue pour créer un client */}
                     <Dialog open={isNewCustomerDialogOpen} onOpenChange={setIsNewCustomerDialogOpen}>
                       <DialogTrigger asChild>
                         <Button className="w-full">
@@ -481,7 +473,6 @@ const NewSale = () => {
                   </div>
                 )}
                 
-                {/* Sale type selection */}
                 <div className="mt-4">
                   <Label htmlFor="saleType" className="mb-2 block">Type de vente</Label>
                   <Select 
@@ -501,7 +492,6 @@ const NewSale = () => {
                   </Select>
                 </div>
                 
-                {/* Deadline for payment if applicable */}
                 {['installment', 'partialPaid', 'deliveredNotPaid'].includes(saleType) && (
                   <div className="mt-4">
                     <Label htmlFor="deadline" className="mb-2 block">Date limite de paiement</Label>
@@ -516,7 +506,6 @@ const NewSale = () => {
               </CardContent>
             </Card>
             
-            {/* Product quantity selection dialog */}
             <Dialog open={!!selectedProduct} onOpenChange={(open) => !open && setSelectedProduct(null)}>
               <DialogContent>
                 <DialogHeader>
@@ -539,13 +528,36 @@ const NewSale = () => {
                   </div>
                   {selectedProduct && (
                     <div className="flex justify-between">
-                      <span>Prix unitaire:</span>
+                      <span>Prix unitaire par défaut:</span>
                       <span>{selectedProduct.sellingPrice} FCFA</span>
                     </div>
                   )}
+                  <div className="grid grid-cols-4 gap-4 items-center">
+                    <Label htmlFor="customPrice" className="col-span-1 flex items-center">
+                      Prix <CircleDollarSign className="h-4 w-4 ml-1 text-gray-500" />
+                    </Label>
+                    <div className="col-span-3">
+                      <Input
+                        id="customPrice"
+                        type="number"
+                        placeholder="Prix personnalisé"
+                        value={customPrice === undefined ? "" : customPrice}
+                        min="0"
+                        onChange={(e) => setCustomPrice(e.target.value ? Number(e.target.value) : undefined)}
+                        className="col-span-3"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Laissez vide pour utiliser le prix par défaut
+                      </p>
+                    </div>
+                  </div>
                   <div className="flex justify-between font-bold">
                     <span>Total:</span>
-                    <span>{selectedProduct ? selectedProduct.sellingPrice * quantity : 0} FCFA</span>
+                    <span>
+                      {selectedProduct 
+                        ? ((customPrice !== undefined ? customPrice : selectedProduct.sellingPrice) * quantity) 
+                        : 0} FCFA
+                    </span>
                   </div>
                 </div>
                 <DialogFooter>
@@ -559,7 +571,6 @@ const NewSale = () => {
               </DialogContent>
             </Dialog>
             
-            {/* Cart items */}
             <Card>
               <CardHeader>
                 <CardTitle>Panier</CardTitle>
