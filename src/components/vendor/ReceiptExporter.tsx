@@ -1,7 +1,7 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { FilePdf, Printer, FileText, Download } from 'lucide-react';
+import { Printer, FileText } from 'lucide-react';
+import dynamicIconImports from 'lucide-react/dynamicIconImports';
 import { Sale } from '@/types';
 import { toast } from 'sonner';
 
@@ -12,6 +12,8 @@ interface ReceiptExporterProps {
 }
 
 const ReceiptExporter: React.FC<ReceiptExporterProps> = ({ sale, vendorName, storeName }) => {
+  const FilePdf = React.lazy(dynamicIconImports['file-pdf']);
+
   const handlePrint = () => {
     window.print();
   };
@@ -84,14 +86,16 @@ const ReceiptExporter: React.FC<ReceiptExporterProps> = ({ sale, vendorName, sto
         Imprimer
       </Button>
       
-      <Button 
-        onClick={handleDownloadPDF} 
-        variant="outline"
-        className="flex items-center justify-center"
-      >
-        <FilePdf className="h-4 w-4 mr-2" />
-        Exporter en PDF
-      </Button>
+      <React.Suspense fallback={<div>Loading...</div>}>
+        <Button 
+          onClick={handleDownloadPDF} 
+          variant="outline"
+          className="flex items-center justify-center"
+        >
+          <FilePdf className="h-4 w-4 mr-2" />
+          Exporter en PDF
+        </Button>
+      </React.Suspense>
       
       <Button 
         onClick={handleDownloadCSV}
