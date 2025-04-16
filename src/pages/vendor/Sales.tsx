@@ -39,11 +39,11 @@ const Sales = () => {
         const salesData = salesSnapshot.docs.map(doc => {
           const data = doc.data();
           // Ensure createdAt is properly converted to Date
-          const createdAt = data.createdAt?.toDate ? 
-            data.createdAt.toDate() : 
-            data.createdAt instanceof Date ? 
-              data.createdAt : 
-              new Date();
+          const createdAt = data.createdAt && 'toDate' in data.createdAt && typeof data.createdAt.toDate === 'function'
+            ? data.createdAt.toDate()
+            : data.createdAt instanceof Date
+              ? data.createdAt
+              : new Date();
               
           return {
             id: doc.id,
@@ -178,7 +178,7 @@ const Sales = () => {
                 {sortedSales.map((sale) => {
                   const saleDate = sale.createdAt instanceof Date
                     ? sale.createdAt
-                    : typeof sale.createdAt === 'object' && sale.createdAt?.toDate
+                    : typeof sale.createdAt === 'object' && sale.createdAt && 'toDate' in sale.createdAt && typeof sale.createdAt.toDate === 'function'
                       ? sale.createdAt.toDate()
                       : new Date(sale.createdAt);
                   
