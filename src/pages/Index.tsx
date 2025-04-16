@@ -17,9 +17,6 @@ const Index = () => {
           case 'vendor':
             navigate('/vendor/dashboard');
             break;
-          case 'repairer':
-            navigate('/repairer/dashboard');
-            break;
           default:
             navigate('/login');
         }

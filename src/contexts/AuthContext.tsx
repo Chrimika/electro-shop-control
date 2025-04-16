@@ -1,14 +1,14 @@
+
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db, doc, setDoc, getDoc, GoogleAuthProvider, signInWithPopup, signOut } from '@/lib/firebase';
-import { User as FirebaseUser } from 'firebase/auth';
 import { toast } from 'sonner';
 
 interface User {
   id: string;
   email: string | null;
   displayName: string | null;
-  role?: 'owner' | 'vendor';
+  role: 'owner' | 'vendor'; // Plus de "repairer" pour corriger l'erreur
   storeId?: string;
   hasCompletedSetup?: boolean;
 }
@@ -50,7 +50,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             id: user.uid,
             email: user.email,
             displayName: user.displayName,
-            role: userData.role,
+            role: userData.role || 'owner', // Définir une valeur par défaut
             storeId: userData.storeId,
             hasCompletedSetup: userData.hasCompletedSetup,
           });
@@ -59,6 +59,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             id: user.uid,
             email: user.email,
             displayName: user.displayName,
+            role: 'owner', // Définir une valeur par défaut pour corriger l'erreur TS
           });
         }
       } else {
@@ -86,7 +87,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             id: user.uid,
             email: user.email,
             displayName: user.displayName,
-            role: userData.role,
+            role: userData.role || 'owner', // Définir une valeur par défaut
             storeId: userData.storeId,
             hasCompletedSetup: userData.hasCompletedSetup,
           });
@@ -95,6 +96,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             id: user.uid,
             email: user.email,
             displayName: user.displayName,
+            role: 'owner', // Définir une valeur par défaut
           });
         }
         
