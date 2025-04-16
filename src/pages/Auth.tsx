@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Radio, RadioGroup } from '@/components/ui/radio-group';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -216,15 +215,15 @@ const Auth = () => {
                   <Label>Type de compte</Label>
                   <RadioGroup value={role} onValueChange={(value) => setRole(value as 'owner' | 'vendor' | 'repairer')}>
                     <div className="flex items-center space-x-2 mb-1">
-                      <Radio value="owner" id="role-owner" />
+                      <RadioGroupItem value="owner" id="role-owner" />
                       <Label htmlFor="role-owner" className="cursor-pointer">Propriétaire</Label>
                     </div>
                     <div className="flex items-center space-x-2 mb-1">
-                      <Radio value="vendor" id="role-vendor" />
+                      <RadioGroupItem value="vendor" id="role-vendor" />
                       <Label htmlFor="role-vendor" className="cursor-pointer">Vendeur</Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Radio value="repairer" id="role-repairer" />
+                      <RadioGroupItem value="repairer" id="role-repairer" />
                       <Label htmlFor="role-repairer" className="cursor-pointer">Réparateur</Label>
                     </div>
                   </RadioGroup>
