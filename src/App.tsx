@@ -19,6 +19,7 @@ import OwnerCustomerDetail from './pages/owner/CustomerDetail';
 import CompanySetup from "./pages/owner/CompanySetup";
 import OwnerReceiptVerification from "./pages/owner/ReceiptVerification";
 import ReceiptVerification from "./pages/vendor/ReceiptVerification";
+import RepairerDashboard from './pages/repairer/Dashboard';
 
 function App() {
   const { currentUser } = useAuth();
@@ -28,7 +29,6 @@ function App() {
   }, []);
 
   return (
-    <Router>
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<Auth />} />
@@ -60,8 +60,14 @@ function App() {
           path="/owner/sales/new"
           element={currentUser?.role === 'owner' ? <OwnerNewSale /> : <Navigate to="/login" />}
         />
-        <Route path="/owner/setup" element={<CompanySetup />} />
-        <Route path="/owner/receipt-verification" element={<OwnerReceiptVerification />} />
+        <Route 
+          path="/owner/setup" 
+          element={currentUser?.role === 'owner' ? <CompanySetup /> : <Navigate to="/login" />} 
+        />
+        <Route
+          path="/owner/receipt-verification"
+          element={currentUser?.role === 'owner' ? <OwnerReceiptVerification /> : <Navigate to="/login" />}
+        />
         <Route
           path="/owner/customers"
           element={currentUser?.role === 'owner' ? <OwnerCustomers /> : <Navigate to="/login" />}
@@ -70,7 +76,7 @@ function App() {
           path="/owner/customers/new"
           element={currentUser?.role === 'owner' ? <OwnerNewCustomer /> : <Navigate to="/login" />}
         />
-         <Route
+        <Route
           path="/owner/customers/:id"
           element={currentUser?.role === 'owner' ? <OwnerCustomerDetail /> : <Navigate to="/login" />}
         />
@@ -88,30 +94,43 @@ function App() {
           path="/vendor/sales/:id"
           element={currentUser?.role === 'vendor' ? <VendorSaleDetail /> : <Navigate to="/login" />}
         />
-         <Route
+        <Route
           path="/vendor/profile"
           element={currentUser?.role === 'vendor' ? <VendorProfile /> : <Navigate to="/login" />}
         />
         
-        <Route path="/vendor/receipt-verification" element={<ReceiptVerification />} />
+        <Route 
+          path="/vendor/receipt-verification" 
+          element={currentUser?.role === 'vendor' ? <ReceiptVerification /> : <Navigate to="/login" />} 
+        />
 
-        {/* Redirect authenticated users */}
+        {/* Repairer Routes */}
+        <Route
+          path="/repairer/dashboard"
+          element={currentUser?.role === 'repairer' ? <RepairerDashboard /> : <Navigate to="/login" />}
+        />
+
+        {/* Redirect authenticated users based on role */}
         <Route
           path="/"
           element={
             currentUser ? (
               currentUser.role === 'owner' ? (
                 <Navigate to="/owner/dashboard" />
-              ) : (
+              ) : currentUser.role === 'vendor' ? (
                 <Navigate to="/vendor/dashboard" />
+              ) : (
+                <Navigate to="/repairer/dashboard" />
               )
             ) : (
               <Navigate to="/login" />
             )
           }
         />
+
+        {/* Catch-all redirect to login */}
+        <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
-    </Router>
   );
 }
 

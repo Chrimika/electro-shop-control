@@ -56,6 +56,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             repairSpecialty: userData.repairSpecialty,
             hasCompletedSetup: userData.hasCompletedSetup,
           });
+          
+          // Redirection en fonction du rôle après la connexion
+          if (userData.role === 'owner') {
+            // Si l'utilisateur est un propriétaire et n'a pas terminé la configuration
+            if (userData.hasCompletedSetup === false) {
+              navigate('/owner/setup');
+            } else {
+              navigate('/owner/dashboard');
+            }
+          } else if (userData.role === 'vendor') {
+            navigate('/vendor/dashboard');
+          } else if (userData.role === 'repairer') {
+            navigate('/repairer/dashboard');
+          }
         } else {
           setCurrentUser({
             id: user.uid,
@@ -63,21 +77,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             displayName: user.displayName,
             role: 'owner',
           });
+          navigate('/owner/setup');
         }
       } else {
         setCurrentUser(null);
+        navigate('/login');
       }
       setLoading(false);
     });
     
     return () => unsubscribe();
-  }, []);
+  }, [navigate]);
   
   const login = async (email: string, password: string) => {
     try {
       setLoading(true);
       await signInWithEmailAndPassword(auth, email, password);
       toast.success("Connexion réussie !");
+      // La redirection est gérée par le useEffect ci-dessus
     } catch (error: any) {
       console.error("Erreur lors de la connexion :", error);
       toast.error("Erreur lors de la connexion : " + error.message);
@@ -97,10 +114,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         email,
         displayName: name,
         role,
-        createdAt: new Date()
+        createdAt: new Date(),
+        hasCompletedSetup: false
       });
       
       toast.success("Compte créé avec succès !");
+      // La redirection est gérée par le useEffect ci-dessus
     } catch (error: any) {
       console.error("Erreur lors de l'inscription :", error);
       toast.error("Erreur lors de l'inscription : " + error.message);

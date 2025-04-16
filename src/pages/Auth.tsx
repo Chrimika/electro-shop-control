@@ -6,15 +6,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { auth, db, createUserWithEmailAndPassword, signInWithEmailAndPassword, doc, setDoc } from '../lib/firebase';
 import { toast } from 'sonner';
 import { AlertCircle } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Radio, RadioGroup } from '@/components/ui/radio-group';
 
 const Auth = () => {
   const navigate = useNavigate();
+  const { login, register } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [role, setRole] = useState<'owner' | 'vendor' | 'repairer'>('owner');
   const [loading, setLoading] = useState(false);
   const [passwordError, setPasswordError] = useState('');
   const [generalError, setGeneralError] = useState('');
@@ -32,9 +35,9 @@ const Auth = () => {
     setGeneralError('');
     
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      toast.success('Connecté avec succès');
-      navigate('/dashboard');
+      await login(email, password);
+      
+      // La redirection sera gérée par le contexte d'authentification
     } catch (error: any) {
       console.error('Erreur de connexion:', error);
       
@@ -48,7 +51,6 @@ const Auth = () => {
       } else {
         setGeneralError('Échec de connexion. Vérifiez vos identifiants.');
       }
-      toast.error('Échec de connexion');
     } finally {
       setLoading(false);
     }
@@ -79,18 +81,11 @@ const Auth = () => {
     }
     
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      await register(email, name, password, role);
       
-      // Create user document with role set to 'owner' by default for now
-      await setDoc(doc(db, 'users', userCredential.user.uid), {
-        email,
-        displayName: name,
-        role: 'owner', // Default role
-        createdAt: new Date()
-      });
+      // La redirection se fera via le contexte d'authentification
+      // Il détectera le rôle et redirigera vers le bon tableau de bord
       
-      toast.success('Compte créé avec succès');
-      navigate('/dashboard');
     } catch (error: any) {
       console.error('Erreur d\'inscription:', error);
       
@@ -216,6 +211,23 @@ const Auth = () => {
                   <p className="text-xs text-gray-500 mt-1">
                     Le mot de passe doit contenir au moins 6 caractères
                   </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Type de compte</Label>
+                  <RadioGroup value={role} onValueChange={(value) => setRole(value as 'owner' | 'vendor' | 'repairer')}>
+                    <div className="flex items-center space-x-2 mb-1">
+                      <Radio value="owner" id="role-owner" />
+                      <Label htmlFor="role-owner" className="cursor-pointer">Propriétaire</Label>
+                    </div>
+                    <div className="flex items-center space-x-2 mb-1">
+                      <Radio value="vendor" id="role-vendor" />
+                      <Label htmlFor="role-vendor" className="cursor-pointer">Vendeur</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Radio value="repairer" id="role-repairer" />
+                      <Label htmlFor="role-repairer" className="cursor-pointer">Réparateur</Label>
+                    </div>
+                  </RadioGroup>
                 </div>
               </CardContent>
               <CardFooter>
