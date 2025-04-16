@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -54,9 +55,10 @@ const secondaryNavItems: NavItem[] = [
   { label: 'Rapports', path: '/owner/reports', icon: FileBarChart, description: 'Statistiques et analyses' },
   { label: 'Paramètres', path: '/owner/settings', icon: Settings, description: 'Configuration du système' },
   { 
-    name: "Vérification de reçu", 
-    href: "/owner/receipt-verification", 
-    icon: QrCode 
+    label: 'Vérification de reçu', 
+    path: '/owner/receipt-verification', 
+    icon: QrCode,
+    description: 'Vérifier l\'authenticité des reçus'
   },
 ];
 

@@ -36,10 +36,21 @@ const Sales = () => {
         );
         
         const salesSnapshot = await getDocs(salesQuery);
-        const salesData = salesSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        } as Sale));
+        const salesData = salesSnapshot.docs.map(doc => {
+          const data = doc.data();
+          // Ensure createdAt is properly converted to Date
+          const createdAt = data.createdAt?.toDate ? 
+            data.createdAt.toDate() : 
+            data.createdAt instanceof Date ? 
+              data.createdAt : 
+              new Date();
+              
+          return {
+            id: doc.id,
+            ...data,
+            createdAt
+          } as Sale;
+        });
         
         setSales(salesData);
         setLoading(false);

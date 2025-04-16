@@ -1,4 +1,3 @@
-
 // User types
 export interface User {
   id: string;
@@ -7,6 +6,7 @@ export interface User {
   role: 'owner' | 'vendor' | 'repairer';
   storeId?: string;
   repairSpecialty?: string; // For repairers
+  hasCompletedSetup?: boolean;
 }
 
 // Store types
