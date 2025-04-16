@@ -39,16 +39,26 @@ const Sales = () => {
         const salesData = salesSnapshot.docs.map(doc => {
           const data = doc.data();
           // Ensure createdAt is properly converted to Date
-          const createdAt = data.createdAt && 'toDate' in data.createdAt && typeof data.createdAt.toDate === 'function'
-            ? data.createdAt.toDate()
-            : data.createdAt instanceof Date
-              ? data.createdAt
-              : new Date();
+          let createdAtDate: Date;
+          
+          // Handle different types of createdAt data
+          if (data.createdAt && typeof data.createdAt === 'object') {
+            // Firestore Timestamp type has a toDate method
+            if ('toDate' in data.createdAt && typeof data.createdAt.toDate === 'function') {
+              createdAtDate = data.createdAt.toDate();
+            } else {
+              // If it's already a Date object
+              createdAtDate = data.createdAt as Date;
+            }
+          } else {
+            // Fallback to current date if createdAt is missing or invalid
+            createdAtDate = new Date();
+          }
               
           return {
             id: doc.id,
             ...data,
-            createdAt
+            createdAt: createdAtDate
           } as Sale;
         });
         
@@ -176,11 +186,17 @@ const Sales = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {sortedSales.map((sale) => {
-                  const saleDate = sale.createdAt instanceof Date
-                    ? sale.createdAt
-                    : typeof sale.createdAt === 'object' && sale.createdAt && 'toDate' in sale.createdAt && typeof sale.createdAt.toDate === 'function'
-                      ? sale.createdAt.toDate()
-                      : new Date(sale.createdAt);
+                  // Safely handle date conversion
+                  let saleDate: Date;
+                  if (sale.createdAt instanceof Date) {
+                    saleDate = sale.createdAt;
+                  } else if (sale.createdAt && typeof sale.createdAt === 'object' && 'toDate' in sale.createdAt) {
+                    // This is for Firestore Timestamp objects
+                    saleDate = (sale.createdAt as any).toDate();
+                  } else {
+                    // Fallback
+                    saleDate = new Date(sale.createdAt || Date.now());
+                  }
                   
                   return (
                     <Card
