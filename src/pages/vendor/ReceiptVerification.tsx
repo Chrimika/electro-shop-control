@@ -24,7 +24,7 @@ const ReceiptVerificationPage = () => {
     setScannedSale(sale);
     
     try {
-      // Obtenir les informations sur le vendeur
+      // Get vendor information
       if (sale.vendorId) {
         const vendorDoc = await getDoc(doc(db, 'users', sale.vendorId));
         if (vendorDoc.exists()) {
@@ -32,7 +32,7 @@ const ReceiptVerificationPage = () => {
         }
       }
       
-      // Obtenir les informations sur le magasin
+      // Get store information
       if (sale.storeId) {
         const storeDoc = await getDoc(doc(db, 'stores', sale.storeId));
         if (storeDoc.exists()) {
@@ -40,7 +40,7 @@ const ReceiptVerificationPage = () => {
         }
       }
     } catch (error) {
-      console.error("Erreur lors de la récupération des informations complémentaires:", error);
+      console.error("Error fetching related information:", error);
     }
   };
   

@@ -11,6 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { QrCode } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface SaleReceiptProps {
   sale: Sale;
@@ -52,7 +53,7 @@ const SaleReceipt: React.FC<SaleReceiptProps> = ({ sale, vendorName, storeName, 
     }
   };
   
-  // Générer les données du QR Code (sale ID + timestamp pour authentification)
+  // Generate QR Code data (sale ID + timestamp for authentication)
   const qrData = useMemo(() => {
     const verificationData = {
       id: sale.id,
@@ -62,7 +63,7 @@ const SaleReceipt: React.FC<SaleReceiptProps> = ({ sale, vendorName, storeName, 
     return JSON.stringify(verificationData);
   }, [sale]);
   
-  // Application du style personnalisé si les infos de l'entreprise sont disponibles
+  // Apply custom style if company info is available
   const companyColor = companyInfo?.primaryColor || '#3b82f6';
 
   return (
@@ -101,10 +102,9 @@ const SaleReceipt: React.FC<SaleReceiptProps> = ({ sale, vendorName, storeName, 
           <p className="text-gray-600">Date: {formatDate(sale.createdAt)}</p>
           <p className="text-gray-600">Vendeur: {vendorName || 'N/A'}</p>
           
-          {/* QR Code pour validation */}
+          {/* QR Code for validation */}
           <div className="mt-2 border border-gray-200 rounded-md p-2">
-            <QrCode size={64} />
-            {/* Note: Dans une implémentation réelle, utilisez une bibliothèque de QR code comme qrcode.react */}
+            <QRCodeSVG value={qrData} size={64} />
             <p className="text-xs text-center mt-1">Scan pour vérifier</p>
           </div>
         </div>

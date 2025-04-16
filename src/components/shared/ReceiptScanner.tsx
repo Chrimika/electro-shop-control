@@ -30,13 +30,13 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onSaleFound }) => {
     setError(null);
     
     try {
-      // Chercher d'abord par ID exact
+      // Search by exact ID first
       let saleDoc = await getDoc(doc(db, 'sales', saleId));
       
-      // Si non trouvé, essayer avec le préfixe (les 6 premiers caractères)
+      // If not found, try with the prefix (first 6 characters)
       if (!saleDoc.exists()) {
-        // Dans une implémentation réelle, vous pourriez utiliser une requête
-        // pour rechercher un document où id commence par le préfixe
+        // In a real implementation, you might use a query
+        // to search for a document where id starts with the prefix
         toast.error("Vente non trouvée");
         setError("Aucune vente trouvée avec cet identifiant");
         setLoading(false);
@@ -49,13 +49,13 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onSaleFound }) => {
         createdAt: saleDoc.data().createdAt?.toDate() || new Date()
       } as Sale;
       
-      // Notifier le composant parent
+      // Notify the parent component
       if (onSaleFound) {
         onSaleFound(saleData);
       }
       
       toast.success("Vente trouvée avec succès");
-      setSaleId(''); // Réinitialiser le champ
+      setSaleId(''); // Reset the field
       
     } catch (error) {
       console.error("Error fetching sale:", error);
@@ -67,8 +67,8 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onSaleFound }) => {
   };
   
   const handleScanQRCode = () => {
-    // Dans une implémentation réelle, nous activerions la caméra ici
-    // et utiliserions une bibliothèque comme react-qr-reader
+    // In a real implementation, we would activate the camera here
+    // and use a library like react-qr-reader
     toast.info("La numérisation de QR code sera bientôt disponible");
     setScanMode('manual');
   };

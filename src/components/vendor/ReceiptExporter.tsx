@@ -19,14 +19,14 @@ const ReceiptExporter: React.FC<ReceiptExporterProps> = ({ sale, vendorName, sto
 
   const handleDownloadPDF = () => {
     toast.info("Export PDF en cours de développement");
-    // Dans une implémentation réelle, nous utiliserions une bibliothèque comme jsPDF
-    // pour générer un PDF côté client, ou ferions appel à une fonction Firebase
-    // pour générer le PDF côté serveur.
+    // In a real implementation, we would use a library like jsPDF
+    // to generate a PDF client-side, or call a Firebase function
+    // to generate the PDF server-side.
   };
 
   const handleDownloadCSV = () => {
     try {
-      // Formatage des données pour CSV
+      // Format data for CSV
       const headers = ["Produit", "Prix unitaire", "Quantité", "Total"];
       
       const itemRows = sale.items.map(item => [
@@ -55,14 +55,14 @@ const ReceiptExporter: React.FC<ReceiptExporterProps> = ({ sale, vendorName, sto
         ...summaryRows
       ];
       
-      // Conversion en format CSV
+      // Convert to CSV format
       const csvContent = allRows.map(row => row.join(",")).join("\n");
       
-      // Création du fichier à télécharger
+      // Create download file
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       
-      // Déclenchement du téléchargement
+      // Trigger download
       const link = document.createElement('a');
       link.setAttribute('href', url);
       link.setAttribute('download', `recu-vente-${sale.id.substring(0, 6)}.csv`);
@@ -79,8 +79,8 @@ const ReceiptExporter: React.FC<ReceiptExporterProps> = ({ sale, vendorName, sto
   };
   
   const handleGenerateQRCode = () => {
-    // Dans une implémentation réelle, nous utiliserions une bibliothèque comme qrcode.react
-    // et implémenterions une fonction pour générer et télécharger le code QR
+    // In a real implementation, we would use a library like qrcode.react
+    // and implement a function to generate and download the QR code
     toast.info("Génération du QR Code en cours de développement");
   };
 
