@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Printer, FileText, FileIcon } from 'lucide-react';
+import { Printer, FileText, FileIcon, QrCode } from 'lucide-react';
 import { Sale } from '@/types';
 import { toast } from 'sonner';
 
@@ -9,9 +9,10 @@ interface ReceiptExporterProps {
   sale: Sale;
   vendorName?: string;
   storeName?: string;
+  showQRCode?: boolean;
 }
 
-const ReceiptExporter: React.FC<ReceiptExporterProps> = ({ sale, vendorName, storeName }) => {
+const ReceiptExporter: React.FC<ReceiptExporterProps> = ({ sale, vendorName, storeName, showQRCode = true }) => {
   const handlePrint = () => {
     window.print();
   };
@@ -76,6 +77,12 @@ const ReceiptExporter: React.FC<ReceiptExporterProps> = ({ sale, vendorName, sto
       toast.error("Erreur lors de l'exportation du reçu");
     }
   };
+  
+  const handleGenerateQRCode = () => {
+    // Dans une implémentation réelle, nous utiliserions une bibliothèque comme qrcode.react
+    // et implémenterions une fonction pour générer et télécharger le code QR
+    toast.info("Génération du QR Code en cours de développement");
+  };
 
   return (
     <div className="flex flex-col gap-2">
@@ -101,6 +108,17 @@ const ReceiptExporter: React.FC<ReceiptExporterProps> = ({ sale, vendorName, sto
         <FileText className="h-4 w-4 mr-2" />
         Exporter en CSV
       </Button>
+      
+      {showQRCode && (
+        <Button 
+          onClick={handleGenerateQRCode}
+          variant="outline" 
+          className="flex items-center justify-center"
+        >
+          <QrCode className="h-4 w-4 mr-2" />
+          Générer QR Code
+        </Button>
+      )}
     </div>
   );
 };

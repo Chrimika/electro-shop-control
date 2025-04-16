@@ -18,11 +18,13 @@ import { toast } from 'sonner';
 import VendorHeader from '@/components/vendor/VendorHeader';
 import ReceiptExporter from '@/components/vendor/ReceiptExporter';
 import SaleReceipt from '@/components/vendor/SaleReceipt';
+import { useCompanyInfo } from '@/hooks/useCompanyInfo';
 
 const VendorSaleDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
+  const { companyInfo } = useCompanyInfo();
   const [sale, setSale] = useState<Sale | null>(null);
   const [loading, setLoading] = useState(true);
   const [vendorName, setVendorName] = useState('');
@@ -147,7 +149,14 @@ const VendorSaleDetail = () => {
 
   // Show only the printable receipt when in print view
   if (showPrintView) {
-    return <SaleReceipt sale={sale} vendorName={vendorName} storeName={storeName} />;
+    return (
+      <SaleReceipt 
+        sale={sale} 
+        vendorName={vendorName} 
+        storeName={storeName} 
+        companyInfo={companyInfo || undefined}
+      />
+    );
   }
 
   return (
@@ -170,7 +179,12 @@ const VendorSaleDetail = () => {
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
-            <SaleReceipt sale={sale} vendorName={vendorName} storeName={storeName} />
+            <SaleReceipt 
+              sale={sale} 
+              vendorName={vendorName} 
+              storeName={storeName} 
+              companyInfo={companyInfo || undefined}
+            />
           </div>
           
           <div>

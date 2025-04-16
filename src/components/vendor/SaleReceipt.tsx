@@ -1,6 +1,7 @@
 
-import React from 'react';
-import { Sale } from '@/types';
+import React, { useMemo } from 'react';
+import { Sale } from '@/types/';
+import { CompanyInfo } from '@/types/company';
 import {
   Table,
   TableBody,
@@ -9,15 +10,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { QrCode } from 'lucide-react';
 
 interface SaleReceiptProps {
   sale: Sale;
   vendorName?: string;
   storeName?: string;
   logo?: string;
+  companyInfo?: CompanyInfo;
 }
 
-const SaleReceipt: React.FC<SaleReceiptProps> = ({ sale, vendorName, storeName, logo }) => {
+const SaleReceipt: React.FC<SaleReceiptProps> = ({ sale, vendorName, storeName, logo, companyInfo }) => {
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString('fr-FR', {
       year: 'numeric',
@@ -48,25 +51,62 @@ const SaleReceipt: React.FC<SaleReceiptProps> = ({ sale, vendorName, storeName, 
         return type;
     }
   };
+  
+  // Générer les données du QR Code (sale ID + timestamp pour authentification)
+  const qrData = useMemo(() => {
+    const verificationData = {
+      id: sale.id,
+      time: sale.createdAt.getTime(),
+      total: sale.totalAmount
+    };
+    return JSON.stringify(verificationData);
+  }, [sale]);
+  
+  // Application du style personnalisé si les infos de l'entreprise sont disponibles
+  const companyColor = companyInfo?.primaryColor || '#3b82f6';
 
   return (
     <div className="p-6 max-w-4xl mx-auto bg-white" id="printable-receipt">
-      {/* Receipt Header */}
+      {/* Receipt Header with Company Info */}
       <div className="flex justify-between items-start mb-8">
-        <div>
-          {logo ? (
+        <div className="flex-1">
+          {companyInfo?.logo ? (
+            <img src={companyInfo.logo} alt={companyInfo.name} className="h-16 mb-2" />
+          ) : logo ? (
             <img src={logo} alt="Logo" className="h-16 mb-2" />
           ) : (
-            <h1 className="text-2xl font-bold">ElectroShop</h1>
+            <h1 className="text-2xl font-bold" style={{ color: companyColor }}>
+              {companyInfo?.name || 'ElectroShop'}
+            </h1>
           )}
-          <p>{storeName || 'Magasin ElectroShop'}</p>
-          <p className="text-gray-600">Reçu de vente</p>
+          <p className="font-medium">{companyInfo?.name || storeName || 'Magasin ElectroShop'}</p>
+          
+          {companyInfo && (
+            <div className="mt-2 text-sm text-gray-600">
+              <p>{companyInfo.activityDomain}</p>
+              <p>{companyInfo.address}</p>
+              <p>Tél: {companyInfo.phone} {companyInfo.email && `• Email: ${companyInfo.email}`}</p>
+              {companyInfo.website && <p>Site: {companyInfo.website}</p>}
+              <p>N° Contrib.: {companyInfo.taxNumber} • RCS: {companyInfo.commercialRegisterNumber}</p>
+            </div>
+          )}
+          
+          <p className="text-gray-600 mt-2">Reçu de vente</p>
         </div>
         
-        <div className="text-right">
-          <h2 className="text-xl font-bold">REÇU #{sale.id.substring(0, 6)}</h2>
+        <div className="flex flex-col items-end space-y-2">
+          <h2 className="text-xl font-bold" style={{ color: companyColor }}>
+            REÇU #{sale.id.substring(0, 6)}
+          </h2>
           <p className="text-gray-600">Date: {formatDate(sale.createdAt)}</p>
           <p className="text-gray-600">Vendeur: {vendorName || 'N/A'}</p>
+          
+          {/* QR Code pour validation */}
+          <div className="mt-2 border border-gray-200 rounded-md p-2">
+            <QrCode size={64} />
+            {/* Note: Dans une implémentation réelle, utilisez une bibliothèque de QR code comme qrcode.react */}
+            <p className="text-xs text-center mt-1">Scan pour vérifier</p>
+          </div>
         </div>
       </div>
       
@@ -107,7 +147,7 @@ const SaleReceipt: React.FC<SaleReceiptProps> = ({ sale, vendorName, storeName, 
         
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow style={{ backgroundColor: `${companyColor}20` }}>
               <TableHead>Produit</TableHead>
               <TableHead className="text-right">Prix unitaire</TableHead>
               <TableHead className="text-right">Quantité</TableHead>
@@ -157,7 +197,7 @@ const SaleReceipt: React.FC<SaleReceiptProps> = ({ sale, vendorName, storeName, 
         <p>Merci pour votre achat!</p>
         <p className="mt-1">Pour toute question concernant votre achat, veuillez contacter le service client.</p>
         <p className="mt-4">
-          ElectroShop - Tous droits réservés © {new Date().getFullYear()}
+          {companyInfo?.name || 'ElectroShop'} - Tous droits réservés © {new Date().getFullYear()}
         </p>
       </div>
     </div>

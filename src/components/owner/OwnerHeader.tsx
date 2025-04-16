@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Bell, Menu, X, Home, Store, ShoppingBag, Package, Smartphone, Users, FileBarChart, Settings } from 'lucide-react';
+import { Bell, Menu, X, Home, Store, ShoppingBag, Package, Smartphone, Users, FileBarChart, Settings, QrCode } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -53,6 +53,11 @@ const secondaryNavItems: NavItem[] = [
   { label: 'Clients', path: '/owner/customers', icon: Users, description: 'Base de données clients' },
   { label: 'Rapports', path: '/owner/reports', icon: FileBarChart, description: 'Statistiques et analyses' },
   { label: 'Paramètres', path: '/owner/settings', icon: Settings, description: 'Configuration du système' },
+  { 
+    name: "Vérification de reçu", 
+    href: "/owner/receipt-verification", 
+    icon: QrCode 
+  },
 ];
 
 const OwnerHeader = () => {

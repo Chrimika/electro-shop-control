@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/contexts/NotificationContext';
-import { Bell, Menu, X, Home, ShoppingBag, Smartphone, Users, FileBarChart, Settings, User } from 'lucide-react';
+import { Bell, Menu, X, Home, ShoppingBag, Smartphone, Users, FileBarChart, Settings, User, QrCode } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -54,6 +53,11 @@ const VendorHeader = () => {
     { path: '/vendor/sales', label: 'Ventes', icon: ShoppingBag },
     { path: '/vendor/repairs', label: 'Réparations', icon: Smartphone },
     { path: '/vendor/customers', label: 'Clients', icon: Users },
+    { 
+      name: "Vérification de reçu", 
+      href: "/vendor/receipt-verification", 
+      icon: QrCode 
+    },
   ];
 
   return (

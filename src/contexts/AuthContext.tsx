@@ -1,70 +1,178 @@
-
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { auth, db, doc, getDoc, signOut } from '../lib/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
-import { User as UserType } from '../types';
+import { useNavigate } from 'react-router-dom';
+import { auth, db, doc, setDoc, getDoc, GoogleAuthProvider, signInWithPopup, signOut } from '@/lib/firebase';
+import { User as FirebaseUser } from 'firebase/auth';
+import { toast } from 'sonner';
 
-interface AuthContextType {
-  currentUser: UserType | null;
-  loading: boolean;
-  logout: () => Promise<void>;
+interface User {
+  id: string;
+  email: string | null;
+  displayName: string | null;
+  role?: 'owner' | 'vendor';
+  storeId?: string;
+  hasCompletedSetup?: boolean;
 }
 
-const AuthContext = createContext<AuthContextType>({ 
-  currentUser: null, 
-  loading: true,
-  logout: async () => {} 
+interface AuthContextProps {
+  currentUser: User | null;
+  loading: boolean;
+  login: () => Promise<void>;
+  logout: () => Promise<void>;
+  setUserRole: (role: 'owner' | 'vendor') => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextProps>({
+  currentUser: null,
+  loading: false,
+  login: async () => {},
+  logout: async () => {},
+  setUserRole: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<UserType | null>(null);
-  const [loading, setLoading] = useState(true);
+interface AuthProviderProps {
+  children: React.ReactNode;
+}
 
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
-        // Fetch additional user data from Firestore
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (userDoc.exists()) {
           const userData = userDoc.data();
           setCurrentUser({
             id: user.uid,
-            email: user.email || '',
+            email: user.email,
+            displayName: user.displayName,
             role: userData.role,
-            displayName: userData.displayName || user.displayName || '',
             storeId: userData.storeId,
-            repairSpecialty: userData.repairSpecialty
+            hasCompletedSetup: userData.hasCompletedSetup,
           });
         } else {
-          setCurrentUser(null);
+          setCurrentUser({
+            id: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+          });
         }
       } else {
         setCurrentUser(null);
       }
       setLoading(false);
     });
-
-    return unsubscribe;
+    
+    return () => unsubscribe();
   }, []);
-
-  // Add logout function
-  const logout = async () => {
+  
+  const login = async () => {
     try {
-      await signOut(auth);
-      // No need to set currentUser to null here as the auth state change will trigger that
-    } catch (error) {
-      console.error("Failed to logout", error);
-      throw error;
+      setLoading(true);
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      
+      if (user) {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        const userData = userDoc.data();
+        
+        if (userDoc.exists()) {
+          setCurrentUser({
+            id: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            role: userData.role,
+            storeId: userData.storeId,
+            hasCompletedSetup: userData.hasCompletedSetup,
+          });
+        } else {
+          setCurrentUser({
+            id: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+          });
+        }
+        
+        toast.success("Connexion réussie !");
+        
+        // Après la connexion réussie, si c'est un propriétaire, vérifier la configuration
+        if (userData?.role === 'owner') {
+          const companyDoc = await getDoc(doc(db, 'companies', user.uid));
+          
+          // Si l'entreprise n'est pas configurée, rediriger vers la page de configuration
+          if (!companyDoc.exists() || !companyDoc.data()?.setupCompleted) {
+            navigate('/owner/setup');
+            return;
+          }
+        }
+        
+        if (userData?.role === 'vendor') {
+          navigate('/vendor/dashboard');
+          return;
+        }
+        
+        navigate('/owner/dashboard');
+      }
+    } catch (error: any) {
+      console.error("Erreur lors de la connexion :", error);
+      toast.error("Erreur lors de la connexion : " + error.message);
+    } finally {
+      setLoading(false);
     }
   };
-
-  const value = { currentUser, loading, logout };
-
+  
+  const logout = async () => {
+    try {
+      setLoading(true);
+      await signOut(auth);
+      setCurrentUser(null);
+      toast.success("Déconnexion réussie !");
+      navigate('/login');
+    } catch (error: any) {
+      console.error("Erreur lors de la déconnexion :", error);
+      toast.error("Erreur lors de la déconnexion : " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const setUserRole = async (role: 'owner' | 'vendor') => {
+    if (!currentUser) return;
+    
+    try {
+      setLoading(true);
+      
+      // Mettre à jour le rôle de l'utilisateur dans Firestore
+      await setDoc(doc(db, 'users', currentUser.id), { role: role }, { merge: true });
+      
+      // Mettre à jour l'état local de l'utilisateur
+      setCurrentUser({ ...currentUser, role: role });
+      
+      toast.success(`Votre rôle a été défini sur ${role}`);
+    } catch (error: any) {
+      console.error("Erreur lors de la définition du rôle de l'utilisateur :", error);
+      toast.error("Erreur lors de la définition du rôle de l'utilisateur : " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const value: AuthContextProps = {
+    currentUser,
+    loading,
+    login,
+    logout,
+    setUserRole,
+  };
+  
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };
